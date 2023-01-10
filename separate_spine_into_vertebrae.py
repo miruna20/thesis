@@ -46,7 +46,6 @@ def separate_spine_into_vertebrae(root_path_spines, spine_id, root_path_vertebra
         print("Json file cannot be found in " + str(path_spine), file=sys.stderr)
         return
 
-
     f = open(labels)
     data = json.load(f)
 
@@ -56,8 +55,9 @@ def separate_spine_into_vertebrae(root_path_spines, spine_id, root_path_vertebra
 
     # iterate over the labels in json file
     start = timer()
-    for ind in range(1,len(data)):
-        level = data[ind]['label']
+    #for ind in range(1,len(data)):
+    lumbar_levels = [20,21,22,23,24]
+    for level in lumbar_levels:
         print("level" + str(level))
 
         # if the file already exists, skip
