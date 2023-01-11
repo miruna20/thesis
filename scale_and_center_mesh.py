@@ -2,6 +2,29 @@ import os
 import sys
 import argparse
 import glob
+import open3d as o3d
+
+#TODO modify scale and center
+# ISSUE: when we center with iws file, a fix translation vector is substracted from the coordinates of the vertices.
+# Since vertebrae are positioned at different distances from the center, this leads to problems
+
+def scale_and_center(vert_path):
+    # read mesh
+    vert = o3d.io.read_triangle_mesh(vert_path)
+
+    # get center
+    centerVertebra = vert.get_center()
+
+    # scale to 0.01 of the initial size
+    vert.scale(0.01, center=centerVertebra)
+    # move to center
+    vertsVertebra = vert.vertices - centerVertebra
+    vert.vertices = o3d.utility.Vector3dVector(vertsVertebra)
+
+    # save mesh
+    o3d.io.write_triangle_mesh(vert_path.replace("_msh.obj", "_msh_scaled_centered.obj"), vert)
+
+
 
 if __name__ == '__main__':
     arg_parser = argparse.ArgumentParser(description="Scales a mesh to 0.01 of its original size and centers it")
@@ -33,7 +56,6 @@ if __name__ == '__main__':
     with open(args.txt_file) as file:
         spine_ids = [line.strip() for line in file]
 
-    placeholders = ['Name', 'PathToFile', 'PathToSave']
 
     for spine_id in spine_ids:
 
@@ -42,22 +64,6 @@ if __name__ == '__main__':
         vert_mesh_paths = sorted(glob.glob(os.path.join(args.root_path_vertebrae, unique_identifier), recursive=True))
 
         for vert_mesh_path in vert_mesh_paths:
-            arguments_imfusion = ""
-            for p in placeholders:
-
-                if p == 'PathToFile':
-                    value = vert_mesh_path
-
-                if p == 'Name':
-                    vert_segm_name = os.path.basename(vert_mesh_path)
-                    value = vert_segm_name[:vert_segm_name.find('.obj')]
-
-                if p == 'PathToSave':
-                    value = vert_mesh_path.replace('_msh.obj','_msh_scaled_centered.obj')
-
-                arguments_imfusion += p + "=" + value + " "
-
-            print('ARGUMENTS: ', arguments_imfusion)
-            os.system("ImFusionConsole" + " " + args.workspace_scale_and_center_mesh + " " + arguments_imfusion)
-            print('################################################### ')
+            print("Scaling and centering" + str(vert_mesh_path))
+            scale_and_center(vert_mesh_path)
 
