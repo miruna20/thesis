@@ -4,10 +4,6 @@ import argparse
 import glob
 import open3d as o3d
 
-#TODO modify scale and center
-# ISSUE: when we center with iws file, a fix translation vector is substracted from the coordinates of the vertices.
-# Since vertebrae are positioned at different distances from the center, this leads to problems
-
 def scale_and_center(vert_path):
     # read mesh
     vert = o3d.io.read_triangle_mesh(vert_path)
