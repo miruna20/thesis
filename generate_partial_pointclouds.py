@@ -68,7 +68,7 @@ if __name__ == '__main__':
                     ])
 
     # rotate resulting point clouds to align with the initial mesh
-    print("Rotating resulting point clouds to align with the initial mesh")
+    print("Rotating resulting point clouds to align with the initial mesh...")
     # iterate over vert IDS
     with open(args.txt_file) as file:
         vert_ids = [line.strip() for line in file]
