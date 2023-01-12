@@ -1,0 +1,8 @@
+This directory contains code that generates partial point clouds from VerSe vertebrae models. To use it:
+
+1. Install Blender.
+2. Create a vertebra list (e.g with get_list_of_vertebrae_in_folder.py). Each line of the vert list should be in the format [vert_id].
+3. Run generate_partial_pointclouds.py with the required flags.
+
+Note: make sure that the meshes that you use have previously been scaled and centered (see scale_and_center_mesh.py) and are aligned with the
+vertebral arch towards y axis and with the facets towards z
