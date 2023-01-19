@@ -1,0 +1,12 @@
+Config for training dataset
+
+--root_path_spines "/home/miruna20/Documents/Thesis/Dataset/VerSe2020/full_spines/subjectbased_structure/01_training"
+--list_spine_names "/home/miruna20/Documents/Thesis/Dataset/VerSe2020/full_spines/subjectbased_structure/01_training/preprocessing/list_lumbar_spines_training_verse20.txt"
+--root_path_vertebrae "/home/miruna20/Documents/Thesis/Dataset/VerSe2020/vertebrae/01_training"
+--workspace_file_segm_to_mesh "/home/miruna20/Documents/Thesis/Code/Preprocessing/thesis/imfusion_workspaces/segmentation_to_mesh.iws"
+--output_directory_raycasting "/home/miruna20/Documents/Thesis/Dataset/VerSe2020/vertebrae/01_training/preprocessing/partial_pcds"
+--path_blender_executable "/home/miruna20/Documents/Thesis/Code/Preprocessing/blender-2.79-linux-glibc219-x86_64"
+--num_scans_per_model 16
+--list_vertebrae_names "/home/miruna20/Documents/Thesis/Dataset/VerSe2020/vertebrae/01_training/preprocessing/list_lumbar_vertebrae_training_verse20.txt"
+--result_h5_file "/home/miruna20/Documents/Thesis/Dataset/VerSe2020/vertebrae/01_training/preprocessing/vert_training_verse20.h5"
+--nr_points_per_point_cloud 2048

@@ -39,13 +39,6 @@ if __name__ == '__main__':
         help="Txt file that contains all spines that contain all lumbar vertebrae"
     )
 
-    arg_parser.add_argument(
-        "--workspace_scale_and_center_mesh",
-        required=True,
-        dest="workspace_scale_and_center_mesh",
-        help="ImFusion workspace files that has scales a mesh to 0.01 of its original size and centers it"
-    )
-
     args = arg_parser.parse_args()
 
     # iterate over spine IDS
@@ -60,6 +53,6 @@ if __name__ == '__main__':
         vert_mesh_paths = sorted(glob.glob(os.path.join(args.root_path_vertebrae, unique_identifier), recursive=True))
 
         for vert_mesh_path in vert_mesh_paths:
-            print("Scaling and centering" + str(vert_mesh_path))
+            print("Scaling and centering " + str(vert_mesh_path))
             scale_and_center(vert_mesh_path)
 

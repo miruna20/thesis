@@ -12,7 +12,10 @@ def get_spines_with_lumbar_vertebrae(root_folder, file):
     :param file: path of txt file to be saved
     :return:
     """
-    print("Creating text file with all spines that contain lumbar vertebrae")
+
+    if(not os.path.exists(os.path.dirname(file))):
+        os.makedirs(os.path.dirname(file))
+
     # gather all of the json files to be able to check for lumbar vertebrae
     filenames = []
     for path in Path(os.path.join(root_folder)).rglob('*.json'):

@@ -18,12 +18,6 @@ def find_file_in_folder_with_unique_identifier(folder,unique_identifier):
 
 def separate_spine_into_vertebrae(root_path_spines, spine_id, root_path_vertebrae):
 
-    # if the path for the vertebrae segmentations does not exist create it
-    root_path_vertebrae = os.path.realpath(root_path_vertebrae)
-    print("Path for vertebrae segmentation: " + root_path_vertebrae)
-    if(not os.path.exists(root_path_vertebrae)):
-        os.mkdir(root_path_vertebrae)
-
     # path of folder of the spine with spine_id
     path_spine = os.path.join(root_path_spines,spine_id)
 
@@ -120,6 +114,9 @@ if __name__ == '__main__':
     # iterate over the txt file and process all spines
     with open(args.txt_file) as file:
         spine_ids = [line.strip() for line in file]
+
+    if(not os.path.exists(args.root_path_vertebrae)):
+        os.mkdir(args.root_path_vertebrae)
 
     for spine_id in spine_ids:
         print("Separating spine: " + str(spine_id))

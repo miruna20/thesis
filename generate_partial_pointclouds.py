@@ -59,7 +59,7 @@ if __name__ == '__main__':
                    ])
 
     print("Generating point clouds...")
-    subprocess.run([ 'python3', # call python
+    subprocess.run([ 'python', # call python
                      'raycasting_scripts/process_exr.py', # with script that generates point clouds
                      args.txt_file, # list of vertebrae for which we want to generate point clouds
                      os.path.join(args.output_directory, 'intrinsics.txt'), # intrinsics file

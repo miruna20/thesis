@@ -20,6 +20,9 @@ if __name__ == "__main__":
 
     args = arg_parser.parse_args()
 
+    if(not os.path.exists(os.path.dirname(args.txt_file,))):
+        os.makedirs(os.path.dirname(args.txt_file,))
+
     vertebrae_file = open(args.txt_file, "w")
 
     for file in sorted(os.listdir(args.root_path_vertebrae)):
