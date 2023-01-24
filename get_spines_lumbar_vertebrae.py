@@ -18,7 +18,7 @@ def get_spines_with_lumbar_vertebrae(root_folder, file):
 
     # gather all of the json files to be able to check for lumbar vertebrae
     filenames = []
-    for path in Path(os.path.join(root_folder)).rglob('*.json'):
+    for path in sorted(Path(os.path.join(root_folder)).rglob('*.json')):
         filenames.append(str(path))
 
     lumbar_spines_file = open(file, "w")

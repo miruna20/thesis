@@ -97,8 +97,6 @@ if __name__ == "__main__":
             pc_result = o3d.geometry.PointCloud()
             pc_result.points = o3d.utility.Vector3dVector(results_array[i])
 
-
-
         if(args.sequential_visualization):
             print("Partial point cloud with index" + str(i))
             o3d.visualization.draw_geometries([pc_partial])
@@ -114,5 +112,5 @@ if __name__ == "__main__":
                 pc_result = o3d.geometry.PointCloud.translate(pc_result, np.asarray([1.5, 0, 0]))
                 o3d.visualization.draw_geometries([pc_partial,pc_result,pc_gt])
             else:
-                print("On the left the partial point cloud, on the right the completion with index" + str(i))
+                print("On the left the partial point cloud with index: " + str(math.floor(i % int(args.nr_partial_pcds_per_sample))), " on the right the completion with index" + str(i))
                 o3d.visualization.draw_geometries([pc_partial,pc_gt])
