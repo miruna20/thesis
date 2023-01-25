@@ -91,6 +91,13 @@ if __name__ == '__main__':
         help="Number of points per point cloud. This number is used for the sampling technique."
     )
 
+    arg_parser.add_argument(
+        "--pipeline",
+        nargs='+',
+        default=['all'],
+        help="Specify the steps of the pipeline that will be executed "
+    )
+
     args = arg_parser.parse_args()
 
     root_path_spines = args.root_path_spines
@@ -111,8 +118,9 @@ if __name__ == '__main__':
     result_h5_file = args.result_h5_file
     nr_points_per_point_cloud = args.nr_points_per_point_cloud
 
-    #pipeline = ['all']
-    pipeline = ['separate_spine_into_vert','segm_to_mesh', 'scale_center_vert','get_vertebrae_ids','get_partial_pcds','create_dataseth5']
+    # pipeline steps
+    pipeline = args.pipeline
+
     if 'get_lumbar_spines' in pipeline or 'all' in pipeline:
         subprocess.run(['python', 'get_spines_lumbar_vertebrae.py',
                         '--root_path_spines', root_path_spines,
@@ -158,7 +166,3 @@ if __name__ == '__main__':
                         '--result_h5_file', result_h5_file,
                         '--nr_partial_pcds_per_sample', num_scans_per_model,
                         '--nr_points_per_point_cloud', nr_points_per_point_cloud])
-
-
-
-
