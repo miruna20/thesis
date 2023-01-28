@@ -138,6 +138,7 @@ def processAllVertebrae(list_path, rootDirectoryVertebrae, rootDirectoryPartialP
         try:
             complete_pcd, partial_pcds = processOneVertebra(pathCompleteVertebra=model_path,
                                                             pathToRootPartialPCD=partial_models_root,
+                                                            nrPartialPCDPerSample=nrPartialPCDPerSample,
                                                             visualize=visualize,
                                                             nrPointsProPartialPC=nrPointsProPartialPC,
                                                             nrPointsProCompletePC=nrPointsProCompletePC)

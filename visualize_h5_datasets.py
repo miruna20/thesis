@@ -57,6 +57,9 @@ if __name__ == "__main__":
     labels = np.array(inputs_inference['labels'][()])
     number_samples_per_class = np.array(inputs_inference['number_per_class'])
 
+    print("Shape of complete pcds: " + str(complete_pcds.shape))
+    print("Shape of incomplete pcds: " + str(incomplete_pcds.shape))
+
     # if results are available also read the results dataset
     if(args.path_result_dataset != None):
         results = h5py.File(args.path_result_dataset, 'r')
@@ -75,7 +78,7 @@ if __name__ == "__main__":
         cd_p = np.array(results['cd_p'][()])
         f1 = np.array(results['f1'][()])
 
-    for i in range(0, incomplete_pcds.shape[0]):
+    for i in range(0, incomplete_pcds.shape[0],int(args.nr_partial_pcds_per_sample)):
 
         # from the input dataset
         pc_partial = o3d.geometry.PointCloud()
