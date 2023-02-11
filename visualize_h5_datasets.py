@@ -56,18 +56,15 @@ if __name__ == "__main__":
     incomplete_pcds = np.array(inputs_inference['incomplete_pcds'][()])
     labels = np.array(inputs_inference['labels'][()])
     number_samples_per_class = np.array(inputs_inference['number_per_class'])
+    datasets_ids = np.array(inputs_inference['datasets_ids'])
 
     print("Shape of complete pcds: " + str(complete_pcds.shape))
     print("Shape of incomplete pcds: " + str(incomplete_pcds.shape))
+    print("Number of samples per class: " + str(number_samples_per_class))
 
     # if results are available also read the results dataset
     if(args.path_result_dataset != None):
         results = h5py.File(args.path_result_dataset, 'r')
-
-        # which groups are in the results file:
-        print("Groups present in the results file")
-        for group in inputs_inference.keys():
-            print(group)
 
         results_array = np.array(results['results'][()])
 
@@ -78,7 +75,12 @@ if __name__ == "__main__":
         cd_p = np.array(results['cd_p'][()])
         f1 = np.array(results['f1'][()])
 
-    for i in range(0, incomplete_pcds.shape[0],int(args.nr_partial_pcds_per_sample)):
+        print("Average emd: " + str(np.average(emd) * 10000))
+        print("Average cd_t: " + str(np.average(cd_t) * 10000))
+        print("Average cd_p: " + str(np.average(cd_p) * 10000))
+        print("Average f1: " + str(np.average(f1)))
+
+    for i in range(0, incomplete_pcds.shape[0]):
 
         # from the input dataset
         pc_partial = o3d.geometry.PointCloud()
@@ -96,24 +98,16 @@ if __name__ == "__main__":
             print("cd_p:" + str(cd_p[i] * 10000))
             print("f1:" + str(f1[i]))
 
-
             pc_result = o3d.geometry.PointCloud()
             pc_result.points = o3d.utility.Vector3dVector(results_array[i])
 
-        if(args.sequential_visualization):
-            print("Partial point cloud with index" + str(i))
-            o3d.visualization.draw_geometries([pc_partial])
-            if (args.path_result_dataset != None):
-                print("Result of completion")
-                o3d.visualization.draw_geometries([pc_result])
-            print("GT point cloud")
-            o3d.visualization.draw_geometries([pc_gt])
+        pc_partial.paint_uniform_color([1, 0, 0])
+        pc_gt.paint_uniform_color([0, 0, 1])
+
+        if (args.path_result_dataset != None):
+            print("Visualizing: " + str(datasets_ids[i]) + " red: partial pcd, blue: gt pcd, green: completed pcd")
+            pc_result.paint_uniform_color([0, 1, 0])
+            o3d.visualization.draw_geometries([pc_result,pc_gt])
         else:
-            pc_gt = o3d.geometry.PointCloud.translate(pc_gt, np.asarray([3.5, 0, 0]))
-            if (args.path_result_dataset != None):
-                print("From left to right: input partial pointcloud, completed point cloud, ground truth point cloud with index " + str(i))
-                pc_result = o3d.geometry.PointCloud.translate(pc_result, np.asarray([1.5, 0, 0]))
-                o3d.visualization.draw_geometries([pc_partial,pc_result,pc_gt])
-            else:
-                print("On the left the partial point cloud with index: " + str(math.floor(i % int(args.nr_partial_pcds_per_sample))), " on the right the completion with index" + str(i))
-                o3d.visualization.draw_geometries([pc_partial,pc_gt])
+            print("Visualizing: " + str(datasets_ids[i]) + " red: partial pcd, blue: complete pcd")
+            o3d.visualization.draw_geometries([pc_partial,pc_gt])
