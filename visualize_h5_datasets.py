@@ -63,6 +63,7 @@ if __name__ == "__main__":
     print("Number of samples per class: " + str(number_samples_per_class))
 
     # if results are available also read the results dataset
+    emd_flag = False
     if(args.path_result_dataset != None):
         results = h5py.File(args.path_result_dataset, 'r')
 
@@ -70,17 +71,22 @@ if __name__ == "__main__":
 
         # get metrics
         factor = 10000
-        emd = np.array(results['emd'][()])
+        try:
+            emd = np.array(results['emd'][()])
+            emd_flag = True
+        except:
+            print("No emd available for this dataset")
         cd_t = np.array(results['cd_t'][()])
         cd_p = np.array(results['cd_p'][()])
         f1 = np.array(results['f1'][()])
 
-        print("Average emd: " + str(np.average(emd) * 10000))
+        if(emd_flag):
+            print("Average emd: " + str(np.average(emd) * 10000))
         print("Average cd_t: " + str(np.average(cd_t) * 10000))
         print("Average cd_p: " + str(np.average(cd_p) * 10000))
         print("Average f1: " + str(np.average(f1)))
 
-    for i in range(0, incomplete_pcds.shape[0]):
+    for i in range(0, incomplete_pcds.shape[0],5):
 
         # from the input dataset
         pc_partial = o3d.geometry.PointCloud()
@@ -93,7 +99,8 @@ if __name__ == "__main__":
         # from the results
         if (args.path_result_dataset != None):
             print("index: " + str(i) + ", label: " + str(labels[i]))
-            print("emd:" + str(emd[i] * 10000))
+            if (emd_flag):
+                print("emd:" + str(emd[i] * 10000))
             print("cd_t:" + str(cd_t[i] * 10000))
             print("cd_p:" + str(cd_p[i] * 10000))
             print("f1:" + str(f1[i]))
@@ -103,11 +110,12 @@ if __name__ == "__main__":
 
         pc_partial.paint_uniform_color([1, 0, 0])
         pc_gt.paint_uniform_color([0, 0, 1])
+        coord_sys = o3d.geometry.TriangleMesh.create_coordinate_frame()
 
         if (args.path_result_dataset != None):
             print("Visualizing: " + str(datasets_ids[i]) + " red: partial pcd, blue: gt pcd, green: completed pcd")
             pc_result.paint_uniform_color([0, 1, 0])
-            o3d.visualization.draw_geometries([pc_result,pc_gt])
+            o3d.visualization.draw_geometries([pc_result,pc_partial,pc_gt])
         else:
             print("Visualizing: " + str(datasets_ids[i]) + " red: partial pcd, blue: complete pcd")
             o3d.visualization.draw_geometries([pc_partial,pc_gt])
