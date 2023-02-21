@@ -1,29 +1,24 @@
-import numpy as np
-import h5py
-import open3d as o3d
-import math
 import argparse
 import os
 import glob
+import pymeshlab
 
-def convert_pcd_to_mesh(pcd_path, visualize=False):
-    # read pcd with o3d
-    pcd = o3d.io.read_point_cloud(pcd_path)
+def convert_pcd_to_mesh_meshlab(pcd_path):
+    # reads ply
+    # create a new MeshSet
+    ms = pymeshlab.MeshSet()
+    # load a new mesh in the MeshSet, and sets it as current mesh
+    # the path of the mesh can be absolute or relative
+    ms.load_new_mesh(pcd_path)
 
-    # estimate the normals of the pcd
-    pcd.estimate_normals()
-    # pcd.orient_normals_consistent_tangent_plane(100)
+    # compute normals
+    ms.compute_normal_for_point_clouds()
 
-    # try algo for surface reconstruction (e.g ball pivoting)
-    # ball pivoting
-    radii = [0.005, 0.01, 0.02, 0.04, 0.5]
-    mesh_from_ball_pivoting = o3d.geometry.TriangleMesh.create_from_point_cloud_ball_pivoting(pcd, o3d.utility.DoubleVector(radii))
+    # use poisson for surface generation
+    ms.generate_surface_reconstruction_screened_poisson()
 
-    if(visualize):
-        o3d.visualization.draw_geometries([mesh_from_ball_pivoting])
-
-    o3d.io.write_triangle_mesh(pcd_path.replace(".pcd",".obj"),mesh_from_ball_pivoting)
-
+    ms.meshing_remove_unreferenced_vertices()
+    ms.save_current_mesh(pcd_path.replace(".ply",".obj"))
 
 if __name__ == "__main__":
 
@@ -45,8 +40,8 @@ if __name__ == "__main__":
     args = arg_parser.parse_args()
 
     # gather all of the pointclouds in the folder, transform each one into a mesh and save the result
-    pcd_paths = sorted(glob.glob(os.path.join(args.root_path_pcds, "*.pcd"), recursive=True))
+    pcd_paths = sorted(glob.glob(os.path.join(args.root_path_pcds, "*.ply"), recursive=True))
 
-    #convert_pcd_to_mesh(os.path.join(args.root_path_pcds,"b'sub-verse502_verLev21_deform2'_4096_reconstruction.pcd"))
     for pcd_path in pcd_paths:
-        convert_pcd_to_mesh(pcd_path, args.visualize)
+        print("Converting: " + pcd_path)
+        convert_pcd_to_mesh_meshlab(pcd_path, args.visualize)

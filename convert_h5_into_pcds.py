@@ -55,12 +55,13 @@ if __name__ == "__main__":
 
         # add points to the point cloud
         o3d_pcd.points = o3d.utility.Vector3dVector(pcd)
+        filtered_pcd, _ = o3d_pcd.remove_radius_outlier(4, 0.03)
 
         # save point cloud
         if('results' in args.path_dataset):
-            o3d.io.write_point_cloud(os.path.join(args.root_path_pcds,str(names[i]) + "_" + str(pcds.shape[1]) + "_reconstruction.pcd"), o3d_pcd)
+            o3d.io.write_point_cloud(os.path.join(args.root_path_pcds,str(names[i]) + "_" + str(pcds.shape[1]) + "_reconstruction.ply"), filtered_pcd)
         else:
-            o3d.io.write_point_cloud(os.path.join(args.root_path_pcds,str(names[i])+ "_" + str(pcds.shape[1]) + "_GT.pcd"), o3d_pcd)
+            o3d.io.write_point_cloud(os.path.join(args.root_path_pcds,str(names[i])+ "_" + str(pcds.shape[1]) + "_GT.ply"), filtered_pcd)
 
 
 
