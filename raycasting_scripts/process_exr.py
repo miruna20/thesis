@@ -39,6 +39,60 @@ def read_exr(exr_path, height, width):
     depth[np.isinf(depth)] = 0
     return depth
 
+def unit_vector(vector):
+    """ Returns the unit vector of the vector.  """
+    return vector / np.linalg.norm(vector)
+
+def angle_between(v1, v2):
+    """ Returns the angle in radians between vectors 'v1' and 'v2'::
+            angle_between((1, 0, 0), (0, 1, 0))
+            1.5707963267948966
+            angle_between((1, 0, 0), (1, 0, 0))
+            0.0
+            angle_between((1, 0, 0), (-1, 0, 0))
+            3.141592653589793
+    """
+    v1_u = unit_vector(v1)
+    v2_u = unit_vector(v2)
+    return np.arccos(np.clip(np.dot(v1_u, v2_u), -1.0, 1.0))
+
+def compute_incidence_angles(pose,points):
+    camera_pos = pose[:,-1][0:3]
+
+    # estimate normals for the pointcloud with open3d
+    pcd = open3d.geometry.PointCloud()
+    pcd.points = open3d.utility.Vector3dVector(points)
+    pcd.estimate_normals()
+
+    incidence_angles = []
+    filtered_points = []
+
+    # iterate over each point
+    for indx in range(points.shape[0]):
+        # compute ray
+        curr_point = points[indx]
+        ray = camera_pos - curr_point
+
+        # get normal
+        normal = np.asarray(pcd.normals)[indx]
+
+        # get angle
+        normal_angle = angle_between(ray, normal)
+        tangent_angle = np.deg2rad(90) - normal_angle
+
+        if( -np.deg2rad(90) < normal_angle < np.deg2rad(90)):
+            incidence_angles.append([tangent_angle,tangent_angle,tangent_angle])
+            filtered_points.append(curr_point.tolist())
+    sphere = open3d.geometry.TriangleMesh.create_sphere(radius=0.1)
+    coord_sys = open3d.geometry.TriangleMesh.create_coordinate_frame(size=0.1)
+    sphere = sphere.translate(camera_pos)
+    sphere.paint_uniform_color([1, 0.706, 0])
+
+    #open3d.visualization.draw([pcd,sphere,coord_sys])
+
+    return np.asarray(incidence_angles), np.asarray(filtered_points)
+
+
 
 def depth2pcd(depth, intrinsics, pose):
     inv_K = np.linalg.inv(intrinsics)
@@ -49,7 +103,12 @@ def depth2pcd(depth, intrinsics, pose):
     points = np.dot(inv_K, np.stack([x, y, np.ones_like(x)] * depth[y, x], 0))
     # camera coordinates -> world coordinates
     points = np.dot(pose, np.concatenate([points, np.ones((1, points.shape[1]))], 0)).T[:, :3]
-    return points
+
+    # compute incidence angles
+    incidence_angles,points = compute_incidence_angles(pose,points)
+
+
+    return points, incidence_angles
 
 
 if __name__ == '__main__':
@@ -80,7 +139,12 @@ if __name__ == '__main__':
             open3d.io.write_image(os.path.join(depth_dir, '%d.png' % i), depth_img)
 
             pose = np.loadtxt(pose_path)
-            points = depth2pcd(depth, intrinsics, pose)
+            points, incidence_angles = depth2pcd(depth, intrinsics, pose)
             pcd = open3d.geometry.PointCloud()
             pcd.points = open3d.utility.Vector3dVector(points)
+
+            # save the incidence angle as normals to be able to save it in the pointcloud format
+            pcd.normals = open3d.utility.Vector3dVector(incidence_angles)
+
+            # save as ply to be able to also save angles
             open3d.io.write_point_cloud(os.path.join(pcd_dir, '%d.pcd' % i), pcd)
