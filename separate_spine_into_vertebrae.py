@@ -2,9 +2,7 @@ import nibabel as nib
 import os
 import glob
 import numpy as np
-import nibabel.processing
 from timeit import default_timer as timer
-import json
 import sys
 import argparse
 
@@ -27,21 +25,10 @@ def separate_spine_into_vertebrae(root_path_spines, spine_id, root_path_vertebra
     spine_segm_name = os.path.basename(spine_segm_file)
     spine_segm_name_wo_ext = spine_segm_name[:spine_segm_name.find('.nii.gz')]
 
-    # get the path of the json file with the labels
-    unique_identifier_json = spine_id + "*.json"
-    labels = find_file_in_folder_with_unique_identifier(path_spine, unique_identifier_json)
-
 
     if(spine_segm_file==""):
         print("The segmentation file cannot be found in " + str(path_spine), file=sys.stderr)
         return
-
-    if(labels==""):
-        print("Json file cannot be found in " + str(path_spine), file=sys.stderr)
-        return
-
-    f = open(labels)
-    data = json.load(f)
 
     # read the segmentation with nibabel
     sample = nib.load(spine_segm_file)
@@ -52,30 +39,30 @@ def separate_spine_into_vertebrae(root_path_spines, spine_id, root_path_vertebra
     #for ind in range(1,len(data)):
     lumbar_levels = [20,21,22,23,24]
     for level in lumbar_levels:
-        print("level" + str(level))
+        if(level in numpyData):
+            print("level" + str(level))
 
-        # if the file already exists, skip
-        savePath = os.path.join(root_path_vertebrae, spine_id + "_verLev" + str(level))
-        savePath = os.path.realpath(savePath)
-        if (not os.path.exists(savePath)):
-            os.mkdir(savePath)
-        elif (not (len(os.listdir(savePath)) == 0)):
-            print("This file has already been processed, the results can be found in: " + str(savePath))
-            continue
+            # if the file already exists, skip
+            savePath = os.path.join(root_path_vertebrae, spine_id + "_verLev" + str(level))
+            savePath = os.path.realpath(savePath)
+            if (not os.path.exists(savePath)):
+                os.mkdir(savePath)
+            elif (not (len(os.listdir(savePath)) == 0)):
+                print("This file has already been processed, the results can be found in: " + str(savePath))
+                continue
 
-        vertData = np.zeros([numpyData.shape[0], numpyData.shape[1], numpyData.shape[2]])
+            vertData = np.zeros([numpyData.shape[0], numpyData.shape[1], numpyData.shape[2]])
 
-        indices = np.transpose((numpyData == level).nonzero())
+            indices = np.transpose((numpyData == level).nonzero())
 
-        for indic in indices:
-            vertData[indic[0],indic[1], indic[2]] = 1
+            for indic in indices:
+                vertData[indic[0],indic[1], indic[2]] = 1
 
-        vertImage = nib.Nifti1Image(vertData,sample.affine,sample.header)
+            vertImage = nib.Nifti1Image(vertData,sample.affine,sample.header)
 
-        nib.save(vertImage,os.path.join(savePath, spine_segm_name_wo_ext + "_verLev" + str(level) + ".nii.gz"))
+            nib.save(vertImage,os.path.join(savePath, spine_segm_name_wo_ext + "_verLev" + str(level) + ".nii.gz"))
     end = timer()
     print("process took: " + str(end-start) +  " seconds")
-    f.close()
     sample.uncache()
 
 if __name__ == '__main__':

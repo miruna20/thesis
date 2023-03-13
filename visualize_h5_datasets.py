@@ -64,6 +64,7 @@ if __name__ == "__main__":
 
     # if results are available also read the results dataset
     emd_flag = False
+    create_input_out_of_results = False
     if(args.path_result_dataset != None):
         results = h5py.File(args.path_result_dataset, 'r')
 
@@ -86,7 +87,15 @@ if __name__ == "__main__":
         print("Average cd_p: " + str(np.average(cd_p) * 10000))
         print("Average f1: " + str(np.average(f1)))
 
-    for i in range(0, incomplete_pcds.shape[0],5):
+        if(create_input_out_of_results):
+            # create new dataset from result dataset
+            new_dataset = h5py.File(args.path_result_dataset.replace("results","inputs"), "w")
+            dset_completepcds = new_dataset.create_dataset("complete_pcds", data=results_array)
+            dset_labels = new_dataset.create_dataset("labels", data=labels)
+            dset_number_per_class = new_dataset.create_dataset("number_per_class", data=number_samples_per_class)
+            datasets_ids = new_dataset.create_dataset("dataset_ids",data=datasets_ids)
+
+    for i in range(0, incomplete_pcds.shape[0]):
 
         # from the input dataset
         pc_partial = o3d.geometry.PointCloud()
