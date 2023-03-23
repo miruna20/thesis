@@ -21,7 +21,8 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 '''
-
+import argparse
+import ast
 import bpy
 import mathutils
 import numpy as np
@@ -29,13 +30,14 @@ import os
 import sys
 import time
 import math
-import glob
 
-def my_pose(tx,ty,tz):
-    R = np.array([[1,0,0],[0,1,0],[0,0,1]])
-    t = np.array([[tx],[ty],[tz]])
+
+def my_pose(tx, ty, tz):
+    R = np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1]])
+    t = np.array([[tx], [ty], [tz]])
     pose = np.concatenate([np.concatenate([R, t], 1), [[0, 0, 0, 1]]], 0)
     return pose
+
 
 def setup_blender(width, height, focal_length):
     # camera
@@ -66,73 +68,76 @@ def setup_blender(width, height, focal_length):
     return scene, camera, output
 
 
-if __name__ == '__main__':
-    model_dir = sys.argv[-4]
-    list_path = sys.argv[-3]
-    output_dir = sys.argv[-2]
-    num_scans = int(sys.argv[-1])
+def render_obj(path, output_dir, camera_poses, intrinsics):
+    """ Render an obj file given one or multiple translations of the camera poses """
+    print("Path:" + path)
 
+    model_id = os.path.basename(path).split(".")[0]
+    # create exr dir and the pose dir
+    exr_dir = os.path.join(output_dir, 'exr')
+    pose_dir = os.path.join(output_dir, 'pose')
+    os.makedirs(exr_dir,exist_ok=True)
+    os.makedirs(pose_dir,exist_ok=True)
+
+    np.savetxt(os.path.join(output_dir, 'intrinsics.txt'), intrinsics, '%f')
+
+    bpy.ops.import_scene.obj(filepath=path)
+
+    for i in range(len(camera_poses)):
+        scene.frame_set(i)
+        pose = my_pose(camera_poses[i][0], camera_poses[i][1], camera_poses[i][2])
+        camera.matrix_world = mathutils.Matrix(pose)
+        output.file_slots[0].path = os.path.join(exr_dir, model_id + '#.exr')
+        bpy.ops.render.render(write_still=True)
+        np.savetxt(os.path.join(pose_dir, model_id+str(i)+".txt"), pose, '%f')
+
+
+def parse_camera_poses_from_string(camera_poses_string):
+    camera_pos = ast.literal_eval(camera_poses_string)
+    return camera_pos
+
+
+if __name__ == '__main__':
+
+    # get passed para
+    list_paths = sys.argv[-2]
+    camera_poses = sys.argv[-1]
+
+    print("Rendering depth for following meshes: ")
+
+    # rendering parameters setup
     width = 160
     height = 120
     focal = 100
     scene, camera, output = setup_blender(width, height, focal)
     intrinsics = np.array([[focal, 0, width / 2], [0, focal, height / 2], [0, 0, 1]])
 
-    with open(os.path.join(list_path)) as file:
-        model_list = [line.strip() for line in file]
+    with open(list_paths) as file:
+        path_list = file.read().splitlines()
+    print("Path list" + str(path_list))
     open('blender.log', 'w+').close()
-    os.system('rm -rf %s' % output_dir)
-    os.makedirs(output_dir)
-    np.savetxt(os.path.join(output_dir, 'intrinsics.txt'), intrinsics, '%f')
 
-    for model_id in model_list:
+    camera_poses = parse_camera_poses_from_string(camera_poses)
+
+    # iterate over the list and render depth for each file individually
+    for path in path_list:
+
+        # get the basename from a path and remove the extension
+        model_id = os.path.basename(path).split(".")[0]
+        print("Model id:" + model_id)
         start = time.time()
-        exr_dir = os.path.join(output_dir, 'exr', model_id)
-        pose_dir = os.path.join(output_dir, 'pose', model_id)
-        os.makedirs(exr_dir)
-        os.makedirs(pose_dir)
+
+        # the output directory is the base directory of our file + "rendering"
+        output_dir = os.path.join(os.path.dirname(path), "rendering")
+        os.makedirs(output_dir, exist_ok=True)
 
         # Redirect output to log file
         old_os_out = os.dup(1)
         os.close(1)
         os.open('blender.log', os.O_WRONLY)
 
-        # Import mesh model
-        # look for model path 
-        unique_identifier_mesh_vertebra = "*verLev*" + "*_msh_scaled_centered.obj"
-        files = glob.glob(os.path.join(os.path.join(model_dir,model_id), unique_identifier_mesh_vertebra))
-        if(len(files)!=1):
-            print("More or less than one mesh found for" + str(model_id) + " skipping...")
-            continue
-        
-        bpy.ops.import_scene.obj(filepath=files[0])
-
-        # this script rotates the mesh 90 degrees around X axis before raycasting. That's why even though we want to raycast from y=1 we raycast from z=1
-
-        # Render
-        # setup camera position parameters
-        x_min = -0.3
-        x_max = +0.3
-
-        y_min = -0.3
-        y_max = +0.3
-
-        #print("ymax-ymin" + str(y_max-y_min))
-        #print("num_scans"  + str(num_scans))
-        y = np.arange(y_min,y_max, ((y_max - y_min) / math.sqrt(num_scans)))
-        x = np.arange(x_min,x_max, ((x_max - x_min) / math.sqrt(num_scans)))
-        X, Y = np.meshgrid(x, y)
-        XY = np.array([X.flatten(), Y.flatten()]).T
-
-        z = 1
-
-        for i in range(num_scans):
-            scene.frame_set(i)
-            pose = my_pose(XY[i][0] ,XY[i][1], z)
-            camera.matrix_world = mathutils.Matrix(pose)
-            output.file_slots[0].path = os.path.join(exr_dir, '#.exr')
-            bpy.ops.render.render(write_still=True)
-            np.savetxt(os.path.join(pose_dir, '%d.txt' % i), pose, '%f')
+        # render obj
+        render_obj(path, output_dir, camera_poses, intrinsics)
 
         # Clean up
         bpy.ops.object.delete()
