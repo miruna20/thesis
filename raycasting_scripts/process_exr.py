@@ -129,7 +129,7 @@ def process_exr(path, output_dir, num_scans, filter_by_incidence_angle):
     height = int(intrinsics[1, 2] * 2)
 
     for i in range(num_scans):
-        print("Num_scan" + str(i))
+        print("Num_scan:" + str(i))
         # find paths where the exr and the corresponding paths were found
         exr_path = os.path.join(output_dir, 'exr', model_id + str(i) + ".exr")
         pose_path = os.path.join(output_dir, 'pose', model_id + str(i) + ".txt")

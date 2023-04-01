@@ -13,7 +13,7 @@ if __name__ == '__main__':
     3. Transform the vert segm(.nii.gz) into a mesh(.obj) --> convert_segmentation_into_mesh.py
     4. Scale the vert mesh and center it --> scale_and_center_mesh.py
     5. Create a list of vertebrae for the dataset --> get_list_of_vertebrae_in_folder.py
-    6. Create partial point clouds through raycasting that resemble partial point clouds extracted from US --> generate_partial_pointclouds.py
+    6. Create partial point clouds through raycasting that resemble partial point clouds extracted from US --> generate_partial_pointclouds_from_vertebrae.py
     ### Put dataset together
     7. Combine partial and complete point clouds into one .h5 dataset which will be used by VRCNet for shape completion --> create_dataset_for_shape_completion.py
     
@@ -150,7 +150,7 @@ if __name__ == '__main__':
                         ])
 
     if 'get_partial_pcds' in pipeline or 'all' in pipeline:
-        subprocess.run(['python', 'generate_partial_pointclouds.py',
+        subprocess.run(['python', 'generate_partial_pointclouds_from_vertebrae.py',
                         '--root_path_vertebrae', root_path_vertebrae,
                         '--list_file_names', vert_ids,
                         '--output_directory', output_directory_raycasting,

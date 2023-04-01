@@ -83,6 +83,7 @@ def render_obj(path, output_dir, camera_poses, intrinsics):
 
     bpy.ops.import_scene.obj(filepath=path)
 
+    # this script rotates the mesh 90 degrees around X axis before raycasting. That's why even though we want to raycast from y=1 we raycast from z=1
     for i in range(len(camera_poses)):
         scene.frame_set(i)
         pose = my_pose(camera_poses[i][0], camera_poses[i][1], camera_poses[i][2])
@@ -93,6 +94,7 @@ def render_obj(path, output_dir, camera_poses, intrinsics):
 
 
 def parse_camera_poses_from_string(camera_poses_string):
+    print("Camera poses string: " + str(camera_poses_string))
     camera_pos = ast.literal_eval(camera_poses_string)
     return camera_pos
 
@@ -100,8 +102,11 @@ def parse_camera_poses_from_string(camera_poses_string):
 if __name__ == '__main__':
 
     # get passed para
+    # path to a txt file that contains all of the paths that need to be processed
     list_paths = sys.argv[-2]
-    camera_poses = sys.argv[-1]
+    # path to a csv file that contains the name of the spine_id together with camera positions from which
+    # to perform the raycasting
+    list_camera_poses = sys.argv[-1]
 
     print("Rendering depth for following meshes: ")
 
@@ -117,13 +122,22 @@ if __name__ == '__main__':
     print("Path list" + str(path_list))
     open('blender.log', 'w+').close()
 
-    camera_poses = parse_camera_poses_from_string(camera_poses)
+    # get a list with the camera poses for each model_id individually
+    with open(list_camera_poses, "r") as f:
+        lines = f.readlines()
+
+    camera_poses = {}
+    for l in lines[1:]:
+        # a line looks like this: Name;CP1;CP2;CP3
+        camera_poses[l.split(";")[0]] = [list(map(float, l.split(";")[1].split())),
+                                         list(map(float, l.split(";")[2].split())),
+                                         list(map(float, l.split(";")[3].split()))]
 
     # iterate over the list and render depth for each file individually
     for path in path_list:
 
         # get the basename from a path and remove the extension
-        model_id = os.path.basename(path).split(".")[0]
+        model_id = os.path.basename(path)
         print("Model id:" + model_id)
         start = time.time()
 
@@ -136,8 +150,11 @@ if __name__ == '__main__':
         os.close(1)
         os.open('blender.log', os.O_WRONLY)
 
+        # get the camera poses for the current model_id from the csv file
+        camera_poses_for_current_model_id = camera_poses[model_id]
+
         # render obj
-        render_obj(path, output_dir, camera_poses, intrinsics)
+        render_obj(path, output_dir, camera_poses_for_current_model_id, intrinsics)
 
         # Clean up
         bpy.ops.object.delete()

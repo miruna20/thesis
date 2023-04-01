@@ -2,3 +2,4 @@
 blender.log
 buffer.png
 *.obj
+utils/__pycache__
