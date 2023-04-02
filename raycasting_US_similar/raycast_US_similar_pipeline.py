@@ -4,16 +4,6 @@ import os
 import subprocess
 from utils import misc
 
-def parse_camera_poses_from_string(camera_poses_string):
-    print("Camera poses string: " + str(camera_poses_string))
-    camera_poses = ast.literal_eval(camera_poses_string)
-
-    new_camera_poses_as_list = []
-    for camera_pose in camera_poses:
-        new_camera_poses_as_list.append(ast.literal_eval(str(camera_pose[0])))
-
-    return new_camera_poses_as_list
-
 if __name__ == '__main__':
 
     """
@@ -119,3 +109,11 @@ if __name__ == '__main__':
                         '--root_paths_spines',root_paths_spines,
                         '--list_spines',list_spines,
                         '--num_deform', num_deform])
+
+    if 'separate_spine_pc_into_vert' in pipeline or 'all' in pipeline:
+        subprocess.run(['python', 'separate_spine_pc_into_vertebrae.py',
+                        '--list_file_names', list_spines,
+                        '--root_path_vertebrae', root_paths_vertebrae,
+                        '--root_path_spines', root_paths_spines,
+                        '--nr_deform_per_spine',num_deform,
+                        ])

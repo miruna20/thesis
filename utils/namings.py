@@ -83,4 +83,13 @@ def get_paths_deformed_scaled_vertebrae(root_vert, spine_id, num_deform):
 
     return sorted(paths_vertebrae)
 
+def get_paths_one_deformation_scaled_vertebrae(root_vert, spine_id, deform):
+    paths_vertebrae = []
+    for i in range(20, 25):
+        vert_folder_name = get_lumbar_vert_folder_name_from_spine(spine_id, i)
+        path_vert = os.path.join(root_vert, vert_folder_name, get_name_vert_deform_scaled(vert_folder_name,deform))
+        paths_vertebrae.append(path_vert)
+
+    return sorted(paths_vertebrae)
+
 
