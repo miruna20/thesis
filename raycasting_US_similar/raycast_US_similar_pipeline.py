@@ -114,7 +114,8 @@ if __name__ == '__main__':
                         '--camera_poses', path_to_save_camera_poses_csv,
                         '--path_blender_executable', path_blender_executable])
 
-    if 'accounts_out_of_plane_US' or 'all' in pipeline:
+    if 'account_US_shadows' in pipeline or 'all' in pipeline:
         subprocess.run(['python', 'accounts_US_shadows.py',
                         '--root_paths_spines',root_paths_spines,
-                        '--list_spines',list_spines])
+                        '--list_spines',list_spines,
+                        '--num_deform', num_deform])

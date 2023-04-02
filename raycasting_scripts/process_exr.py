@@ -118,21 +118,21 @@ def process_exr(path, output_dir, num_scans, filter_by_incidence_angle):
     print(model_id)
 
     # create the directories for depth files and for the point clouds
-    depth_dir = os.path.join(output_dir, 'depth')
-    pcd_dir = os.path.join(output_dir, 'pcd')
+    depth_dir = os.path.join(output_dir, model_id, 'depth')
+    pcd_dir = os.path.join(output_dir, model_id, 'pcd')
     os.makedirs(depth_dir, exist_ok=True)
     os.makedirs(pcd_dir, exist_ok=True)
 
     # read the intrinsics file and get height and width
-    intrinsics = np.loadtxt(os.path.join(output_dir,"intrinsics.txt"))
+    intrinsics = np.loadtxt(os.path.join(output_dir,model_id,"intrinsics.txt"))
     width = int(intrinsics[0, 2] * 2)
     height = int(intrinsics[1, 2] * 2)
 
     for i in range(num_scans):
         print("Num_scan:" + str(i))
         # find paths where the exr and the corresponding paths were found
-        exr_path = os.path.join(output_dir, 'exr', model_id + str(i) + ".exr")
-        pose_path = os.path.join(output_dir, 'pose', model_id + str(i) + ".txt")
+        exr_path = os.path.join(output_dir,model_id, 'exr', model_id + str(i) + ".exr")
+        pose_path = os.path.join(output_dir,model_id, 'pose', model_id + str(i) + ".txt")
 
         # create and write depth image
         depth = read_exr(exr_path, height, width)

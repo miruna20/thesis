@@ -11,29 +11,21 @@ def rotate_pcd(partial_pointcloud):
     partial_pointcloud = partial_pointcloud.rotate(R, center=(0, 0, 0))
     return partial_pointcloud
 
-def merge_pcds(pcds_dir, pcds_files, to_save):
+def merge_pcds(pcds_files, to_save):
     all_pcd_points_list = []
-    for pcd_path in pcds_files:
-        # read pcd
-        full_path = os.path.join(pcds_dir, pcd_path)
+    pcds_path = os.listdir(pcds_files)
+    for pcd in pcds_path:
+        full_path = os.path.join(pcds_files,pcd)
         curr_pcd = o3d.io.read_point_cloud(full_path)
         # rotate
         curr_pcd_rotated = rotate_pcd(curr_pcd)
         # add to the lsit of pcd points
         all_pcd_points_list.append(np.asarray(curr_pcd_rotated.points))
-        os.remove(full_path)
 
     all_pcd_points = np.concatenate(all_pcd_points_list)
     combined_pcd = o3d.geometry.PointCloud()
     combined_pcd.points = o3d.utility.Vector3dVector(all_pcd_points)
     o3d.io.write_point_cloud(to_save, combined_pcd)
-
-def sort_pcds(pcds_dir):
-    pcds_files = os.listdir(pcds_dir)
-
-    merge_pcds(pcds_dir,[pcd_file for pcd_file in pcds_files if "merged" in pcd_file], os.path.join(pcds_dir,"lumbar_mesh_merged.pcd"))
-    merge_pcds(pcds_dir,[pcd_file for pcd_file in pcds_files if "shifted" in pcd_file], os.path.join(pcds_dir,"lumbar_mesh_shifted.pcd"))
-    merge_pcds(pcds_dir,[pcd_file for pcd_file in pcds_files if "merged" not in pcd_file and "shifted" not in pcd_file], os.path.join(pcds_dir,"lumbar_mesh.pcd"))
 
 if __name__ == '__main__':
 
@@ -88,13 +80,17 @@ if __name__ == '__main__':
                     str(num_scans_per_model)  # number of scans per model
                     ])
 
+
     # rotate the pointclouds to get aligned with the initial mesh
     with open(args.list_paths_for_raycasting) as file:
         path_list = file.read().splitlines()
 
     for path in path_list:
-        path_pcds = os.path.join(os.path.dirname(path_list[0]), "rendering", "pcd")
-        sort_pcds(path_pcds)
+        path_to_spine_rendering= os.path.join(os.path.dirname(path_list[0]),"rendering")
+        for dir in os.listdir(path_to_spine_rendering):
+            if os.path.isdir(os.path.join(path_to_spine_rendering,dir)):
+                path_pcds = os.path.join(path_to_spine_rendering, dir, "pcd")
+                merge_pcds(path_pcds,os.path.join(path_to_spine_rendering,dir + ".pcd"))
 
 
 

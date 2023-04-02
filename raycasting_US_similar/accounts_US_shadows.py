@@ -81,6 +81,13 @@ if __name__ == '__main__':
         dest="list_spines",
         help="Txt file that contains all spines"
     )
+
+    arg_parser.add_argument(
+        "--num_deform",
+        required=True,
+        dest="num_deform",
+        help="Number of deformations for one spine"
+    )
     args = arg_parser.parse_args()
     print("Accounting for the shadows in US")
 
@@ -90,9 +97,11 @@ if __name__ == '__main__':
 
     for spine_id in spine_ids:
         print("For spine: " + str(spine_id))
-        path_to_pcds = os.path.join(args.root_paths_spines,spine_id,"rendering","pcd")
-        pcds = sorted(os.listdir(path_to_pcds))
-        delete_shadows_from_pcd(os.path.join(path_to_pcds, pcds[0]),
-                                os.path.join(path_to_pcds, pcds[2]),
-                                os.path.join(path_to_pcds, pcds[1]),
-                                os.path.join(path_to_pcds, "account_for_shadows.pcd"))
+        path_to_pcds = os.path.join(args.root_paths_spines,spine_id,"rendering")
+        for deform in range(int(args.num_deform)):
+            all_paths = sorted(os.listdir(path_to_pcds))
+            paths_pcd = [path for path in all_paths if ".pcd" in path and "forcefield" + str(deform) in path]
+            delete_shadows_from_pcd(os.path.join(path_to_pcds, paths_pcd[0]),
+                                    os.path.join(path_to_pcds, paths_pcd[2]),
+                                    os.path.join(path_to_pcds, paths_pcd[1]),
+                                    os.path.join(path_to_pcds, "account_for_shadows_forcefield" +str(deform)+ ".pcd"))

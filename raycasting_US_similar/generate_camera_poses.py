@@ -4,8 +4,8 @@ import os
 from utils import namings
 
 # TODO think of how to improve the generated camera pose to contain the whole spine --> should we raycast above all 5 vert?
-# TODO this would be more realistic ...
-# TODO prolly it would be a good idea to visualize all of the vertebrae together with the 3 camera positions
+# this would be more realistic ...
+# prolly it would be a good idea to visualize all of the vertebrae together with the 3 camera positions
 def generate_camera_poses( paths_ordered_vertebrae):
     """
     Generate the translation component of the camera poses. The three resulting poses are situated above L2, L3 and L4
@@ -60,17 +60,17 @@ def create_csv_with_camera_poses(list_path_spines_and_vert, camera_poses_csv_pat
         camera_poses = generate_camera_poses(vert_paths)
         curr_spine_path = spines_and_vert[i*6]
         print("Generating camera pose for " + str(os.path.basename(curr_spine_path)))
-        csv_file.write(create_row(os.path.basename(curr_spine_path), camera_poses))
+        csv_file.write(create_row(os.path.basename(curr_spine_path).split(".")[0], camera_poses))
 
         spine = os.path.basename(curr_spine_path).split("_")[0]
         deform = os.path.basename(curr_spine_path).split("_")[1][10]
         # create entry for the shifted spine
         name_spine_shifted = namings.get_name_spine_lumbar_mesh_deformed_scaled_centered_shifted(spine,deform)
-        csv_file.write(create_row(name_spine_shifted, camera_poses))
+        csv_file.write(create_row(name_spine_shifted.split(".")[0], camera_poses))
 
         # create entry for the merged spine
         name_spine_merged = namings.get_name_spine_lumbar_mesh_deformed_scaled_centered_merged(spine,deform)
-        csv_file.write(create_row(name_spine_merged, camera_poses))
+        csv_file.write(create_row(name_spine_merged.split(".")[0], camera_poses))
 
 
 if __name__ == '__main__':

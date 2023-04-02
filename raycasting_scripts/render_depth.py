@@ -137,12 +137,12 @@ if __name__ == '__main__':
     for path in path_list:
 
         # get the basename from a path and remove the extension
-        model_id = os.path.basename(path)
+        model_id = os.path.basename(path).split(".")[0]
         print("Model id:" + model_id)
         start = time.time()
 
         # the output directory is the base directory of our file + "rendering"
-        output_dir = os.path.join(os.path.dirname(path), "rendering")
+        output_dir = os.path.join(os.path.dirname(path), "rendering",model_id)
         os.makedirs(output_dir, exist_ok=True)
 
         # Redirect output to log file

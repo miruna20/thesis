@@ -2,7 +2,7 @@ import os
 import argparse
 
 def generate_random_trafo():
-    # TODO here define some ranges
+    # TODO find a suitable range from we generate this random transformation
     transl = [0.05, 0, 0]
     trafo = "1 0 0 " + str(transl[0]) + " 0 1 0 " + str(transl[1]) + " 0 0 1 " + str(transl[2]) + " 0 0 0 1"
     return trafo
@@ -28,7 +28,7 @@ def shift_and_merge(trafo, path_lumbar_spine, path_to_save_shifted, path_to_save
 
     # call imfusion with arguments
     print('ARGUMENTS: ', arguments_imfusion)
-    os.system("ImFusionSuite" + " " + workspace_file_shift_and_merge + " " + arguments_imfusion)
+    os.system("ImFusionConsole" + " " + workspace_file_shift_and_merge + " " + arguments_imfusion)
     print('################################################### ')
 
 
@@ -55,7 +55,6 @@ if __name__ == '__main__':
         spine_id = os.path.basename(path)
 
         # TODO extend this to work with multiple shifts
-        # TODO extend this to work on multiple deformations, now the paths are set to work on the non deformed lumbar mesh
         shift_and_merge(trafo=trafo,
                         path_lumbar_spine=path,
                         path_to_save_shifted=path.replace(".obj", "_shifted.obj"),
