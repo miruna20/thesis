@@ -41,6 +41,7 @@ def get_paths_deformed_scaled_lumbar_spines(root_spines,spine_id, num_deform):
 def get_lumbar_vert_folder_name_from_spine(spine_id,id):
     return spine_id + "_verLev" + str(id)
 
+
 def get_name_vert_before_deform(vert_folder_name):
     split = vert_folder_name.split("_")
     name = split[0] + "_seg-vert_msk_" + split[1] + "_msh.obj"
@@ -52,6 +53,10 @@ def get_name_vert_deform(vert_folder_name,deform):
 
 def get_name_vert_deform_scaled(vert_folder_name,deform):
     name = vert_folder_name + "_forces" + str(deform) + "_deformed_centered_20_0_scaled.obj"
+    return name
+
+def get_name_polluted_vert_pcd(vert_folder_name,deform):
+    name = vert_folder_name + "_forces" + str(deform) + "_deformed_centered_20_0_scaled.pcd"
     return name
 
 def get_paths_vertebrae(root_vert,spine_id):
@@ -79,6 +84,16 @@ def get_paths_deformed_scaled_vertebrae(root_vert, spine_id, num_deform):
         vert_folder_name = get_lumbar_vert_folder_name_from_spine(spine_id, i)
         for deform in range(int(num_deform)):
             path_vert = os.path.join(root_vert, vert_folder_name, get_name_vert_deform_scaled(vert_folder_name,deform))
+            paths_vertebrae.append(path_vert)
+
+    return sorted(paths_vertebrae)
+
+def get_paths_polluted_pcds(root_vert, spine_id, num_deform):
+    paths_vertebrae = []
+    for i in range(20, 25):
+        vert_folder_name = get_lumbar_vert_folder_name_from_spine(spine_id, i)
+        for deform in range(int(num_deform)):
+            path_vert = os.path.join(root_vert, vert_folder_name, get_name_polluted_vert_pcd(vert_folder_name,deform))
             paths_vertebrae.append(path_vert)
 
     return sorted(paths_vertebrae)
