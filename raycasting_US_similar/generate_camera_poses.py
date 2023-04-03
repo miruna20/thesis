@@ -13,9 +13,9 @@ def generate_camera_poses( paths_ordered_vertebrae):
     """
     vertebrae_meshes = []
 
-    # load L2, L3 and L4
+    # load L1, L2, L3 and L4, L5
     camera_poses = []
-    for i in range(1, 4):
+    for i in range(0, 5):
         # load vertebra
         vert = o3d.io.read_triangle_mesh(paths_ordered_vertebrae[i])
         vertebrae_meshes.append(vert)
@@ -33,8 +33,9 @@ def generate_camera_poses( paths_ordered_vertebrae):
 
 def create_row(spine, camera_poses):
     row = spine + ";"
-    for i in range(3):
-        for j in range(3):
+    nr_coord = 3
+    for i in range(len(camera_poses)):
+        for j in range(nr_coord):
             row = row + str(camera_poses[i][j]) + " "
         row += ";"
     row += "\n"
@@ -50,7 +51,7 @@ def create_csv_with_camera_poses(list_path_spines_and_vert, camera_poses_csv_pat
 
     # open the csv file and write the first row
     csv_file = open(camera_poses_csv_path, 'w')
-    csv_file.write("Name;L2;L3;L4;\n")
+    csv_file.write("Name;L1;L2;L3;L4;L5;\n")
 
     dict = {}
     for i in range(0,int(len(spines_and_vert)/6)):

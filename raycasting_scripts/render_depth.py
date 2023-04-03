@@ -128,10 +128,12 @@ if __name__ == '__main__':
 
     camera_poses = {}
     for l in lines[1:]:
-        # a line looks like this: Name;CP1;CP2;CP3
+        # a line looks like this: Name;CP1;CP2;CP3;CP4;CP5
         camera_poses[l.split(";")[0]] = [list(map(float, l.split(";")[1].split())),
                                          list(map(float, l.split(";")[2].split())),
-                                         list(map(float, l.split(";")[3].split()))]
+                                         list(map(float, l.split(";")[3].split())),
+                                         list(map(float, l.split(";")[4].split())),
+                                         list(map(float, l.split(";")[5].split()))]
 
     # iterate over the list and render depth for each file individually
     for path in path_list:
