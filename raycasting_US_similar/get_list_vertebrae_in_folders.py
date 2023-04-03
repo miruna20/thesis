@@ -29,6 +29,12 @@ if __name__ == "__main__":
         dest="nr_deform_per_spine",
         help="Number of deformations per spine"
     )
+    arg_parser.add_argument(
+        "--num_shifts",
+        required=True,
+        dest="num_shifts",
+        help="Number of shifts for one spine"
+    )
 
     args = arg_parser.parse_args()
     root_vert = args.root_path_vertebrae
@@ -45,15 +51,24 @@ if __name__ == "__main__":
         # iterate over all vertebrae of this spine
         for i in range(20, 25):
             # iterate over all deformations of one vert
+            """
             for deform in range(int(args.nr_deform_per_spine)):
                 vert_folder_name = namings.get_lumbar_vert_folder_name_from_spine(spine, i)
-                # get the name of the pcd and the name of the mesh
-                polluted_pcd_path = os.path.join(root_vert, vert_folder_name, namings.get_name_polluted_vert_pcd(vert_folder_name,deform))
                 vert_mesh_path = os.path.join(root_vert, vert_folder_name, namings.get_name_vert_deform_scaled(vert_folder_name,deform))
 
-                # if they both exist then add to the dataset
-                if(os.path.isfile(polluted_pcd_path) and os.path.isfile(vert_mesh_path)):
-                    vertebrae_file.write(os.path.basename(vert_folder_name).split(".")[0])
-                    vertebrae_file.write("\n")
+                root_folder_shifts = os.path.join(root_vert,vert_folder_name,"shifts")
+                for shift in os.listdir(root_folder_shifts):
+
+                    # get the name of the pcd and the name of the mesh
+                    polluted_pcd_path = os.path.join(root_vert, vert_folder_name,root_folder_shifts,shift, namings.get_name_polluted_vert_pcd(vert_folder_name,deform))
+
+                    # if they both exist then add to the dataset
+                    if(os.path.isfile(polluted_pcd_path) and os.path.isfile(vert_mesh_path)):
+                        vertebrae_file.write(polluted_pcd_path)
+                        vertebrae_file.write("\n")
+            """
+            # idea make a simple list with all vert from all sppines, do all of the path verification in the create_dataset_for_shape_completion
+            vertebrae_file.write(spine + "_verLev" + str(i))
+            vertebrae_file.write("\n")
 
 

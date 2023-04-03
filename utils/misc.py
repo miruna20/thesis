@@ -18,7 +18,7 @@ def create_list_init_shifted_merged_for_raycasting(spines_root,list_spines,save_
         list.write(shifted_spine + "\n")
         list.write(merged_spine + "\n")
 
-def create_list_init_shifted_merged_deformed_for_raycasting(spines_root,list_spines,num_deform,save_to):
+def create_list_init_shifted_merged_deformed_for_raycasting(spines_root,list_spines,num_deform,num_shifts,save_to):
     list = open(save_to, "w")
 
     with open(list_spines) as file:
@@ -28,13 +28,25 @@ def create_list_init_shifted_merged_deformed_for_raycasting(spines_root,list_spi
         folder_name = spine.split("_")[0]
 
         for deform in range(int(num_deform)):
-            init_spine = os.path.join(spines_root, folder_name, namings.get_name_spine_lumbar_mesh_deformed_scaled_centered(spine,deform))
-            shifted_spine = os.path.join(spines_root, folder_name, namings.get_name_spine_lumbar_mesh_deformed_scaled_centered_shifted(spine,deform))
-            merged_spine = os.path.join(spines_root, folder_name, namings.get_name_spine_lumbar_mesh_deformed_scaled_centered_merged(spine,deform))
+            curr_lumbar_mesh_name = namings.get_name_spine_lumbar_mesh_deformed_scaled_centered(spine,deform)
+            shifts_path = os.path.join(spines_root, folder_name, "shifts",curr_lumbar_mesh_name.split(".")[0])
+            shifts_directories = os.listdir(shifts_path)
+            init_spine = os.path.join(spines_root, folder_name, curr_lumbar_mesh_name)
+            if (os.path.isfile(init_spine)):
+                list.write(init_spine + "\n")
 
-            list.write(init_spine + "\n")
-            list.write(shifted_spine + "\n")
-            list.write(merged_spine + "\n")
+            for shift in range(int(num_shifts)):
+                shifted_spine = os.path.join(shifts_path,
+                                             shifts_directories[shift],
+                                             namings.get_name_spine_lumbar_mesh_deformed_scaled_centered_shifted(spine,deform))
+                merged_spine = os.path.join(shifts_path,
+                                            shifts_directories[shift],
+                                            namings.get_name_spine_lumbar_mesh_deformed_scaled_centered_merged(spine,deform))
+
+                if(os.path.isfile(shifted_spine)):
+                    list.write(shifted_spine + "\n")
+                if(os.path.isfile(merged_spine)):
+                    list.write(merged_spine + "\n")
 
 def write_list_row_by_row_to_txt_file(list,file):
     for elem in list:

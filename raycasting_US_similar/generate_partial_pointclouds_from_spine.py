@@ -62,7 +62,6 @@ if __name__ == '__main__':
         lines = f.readlines()
     num_scans_per_model = len(lines[0].split(";"))-2
 
-
     # raycast and obtain exr files
     print("Raycasting...")
     subprocess.run([calling_blender,  # call blender
@@ -80,17 +79,24 @@ if __name__ == '__main__':
                     str(num_scans_per_model)  # number of scans per model
                     ])
 
-
     # rotate the pointclouds to get aligned with the initial mesh
     with open(args.list_paths_for_raycasting) as file:
         path_list = file.read().splitlines()
 
     for path in path_list:
-        path_to_spine_rendering= os.path.join(os.path.dirname(path_list[0]),"rendering")
+        # initial spines pcds
+        path_to_spine_rendering = os.path.join(os.path.dirname(path),"rendering")
         for dir in os.listdir(path_to_spine_rendering):
             if os.path.isdir(os.path.join(path_to_spine_rendering,dir)):
                 path_pcds = os.path.join(path_to_spine_rendering, dir, "pcd")
                 merge_pcds(path_pcds,os.path.join(path_to_spine_rendering,dir + ".pcd"))
+
+
+
+
+
+    
+
 
 
 

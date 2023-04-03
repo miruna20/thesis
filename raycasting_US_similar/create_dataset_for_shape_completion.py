@@ -123,7 +123,7 @@ def saveToH5(fileName, stackedCropped, stackedComplete, labels,datasets_ids, nrS
 
 
 def processAllVertebrae(list_path, rootDirectoryVertebrae, saveTo,
-                        nr_deform_per_sample, visualize=False, nrPointsProPartialPC=2048,
+                        nr_deform_per_sample, nr_shifts_per_sample, visualize=False, nrPointsProPartialPC=2048,
                         nrPointsProCompletePC=4096):
     # prepare lists for storing all vertebrae
     labels = []
@@ -143,40 +143,46 @@ def processAllVertebrae(list_path, rootDirectoryVertebrae, saveTo,
 
     # iterate over the vertebrae names
     for model_id in model_list:
-        # TODO get the correct point cloud
-        for deform in range(nr_deform_per_sample):
-            print(str(idx) + "/" + str(len(model_list) * nr_deform_per_sample))
-            print("Processing " + str(model_id) + " deformation: " + str(deform))
+        vert_folder_name = model_id
+        shift_root = os.path.join(rootDirectoryVertebrae,vert_folder_name,"shifts")
+        shift_folders = sorted(os.listdir(shift_root))
+        if(len(shift_folders) != int(nr_shifts_per_sample)):
+            raise Exception("Nmber of found shift folders does not match the number of given shifts per sample for " + str(model_id))
 
-            vert_folder_name = model_id
-            # get the name of the pcd and the name of the mesh
-            polluted_pcd_path = os.path.join(rootDirectoryVertebrae, vert_folder_name,
-                                             namings.get_name_polluted_vert_pcd(vert_folder_name, deform))
-            vert_mesh_path = os.path.join(rootDirectoryVertebrae, vert_folder_name,
-                                          namings.get_name_vert_deform_scaled(vert_folder_name, deform))
+        for shift in range(int(nr_shifts_per_sample)):
+            for deform in range(nr_deform_per_sample):
 
-            #  process each vertebra individually
-            complete_pcd, partial_pcds = processOneVertebra(pathCompleteVertebra=vert_mesh_path,
-                                                            pathToPartialPCD=polluted_pcd_path,
-                                                            visualize=visualize,
-                                                            nrPointsProPartialPC=nrPointsProPartialPC,
-                                                            nrPointsProCompletePC=nrPointsProCompletePC)
+                print(str(idx) + "/" + str(len(model_list) * nr_deform_per_sample * int(nr_shifts_per_sample)))
+                print("Processing " + str(model_id) + " deformation: " + str(deform) + " and shift: " + str(shift))
+
+                # get the name of the pcd and the name of the mesh
+                polluted_pcd_path = os.path.join(rootDirectoryVertebrae, vert_folder_name, "shifts", shift_folders[shift],
+                                                 namings.get_name_polluted_vert_pcd(vert_folder_name, deform))
+                vert_mesh_path = os.path.join(rootDirectoryVertebrae, vert_folder_name,
+                                              namings.get_name_vert_deform_scaled(vert_folder_name, deform))
+
+                #  process each vertebra individually
+                complete_pcd, partial_pcds = processOneVertebra(pathCompleteVertebra=vert_mesh_path,
+                                                                pathToPartialPCD=polluted_pcd_path,
+                                                                visualize=visualize,
+                                                                nrPointsProPartialPC=nrPointsProPartialPC,
+                                                                nrPointsProCompletePC=nrPointsProCompletePC)
 
 
-            # if the partial point cloud has less than nrPointsProPartialPC then partial_pcds will be an empty list
-            if len(partial_pcds) == 0:
-                continue
+                # if the partial point cloud has less than nrPointsProPartialPC then partial_pcds will be an empty list
+                if len(partial_pcds) == 0:
+                    continue
 
-            # add it to h5py
-            # make sure that the smallest label will be 0
-            label_normalized = extractLabel(model_id) - min_label
-            complete_pcds_all_vertebrae.append(complete_pcd)
-            partial_pcds_all_vertebrae.extend(partial_pcds)
-            dataset_ids.append((model_id + "_deform" + str(deform)).encode("ascii"))
+                # add it to h5py
+                # make sure that the smallest label will be 0
+                label_normalized = extractLabel(model_id) - min_label
+                complete_pcds_all_vertebrae.append(complete_pcd)
+                partial_pcds_all_vertebrae.extend(partial_pcds)
+                dataset_ids.append((model_id + "_deform" + str(deform)).encode("ascii"))
 
-            # size of labels = size of all_partial_pcds
-            labels.extend([label_normalized for j in range(0, 1)])
-            idx += 1
+                # size of labels = size of all_partial_pcds
+                labels.extend([label_normalized for j in range(0, 1)])
+                idx += 1
 
     # stack the results
     stacked_partial_pcds = np.stack(partial_pcds_all_vertebrae, axis=0)
@@ -230,6 +236,12 @@ if __name__ == "__main__":
     )
 
     arg_parser.add_argument(
+        "--num_shifts",
+        required=True,
+        dest="num_shifts",
+        help="Number of shifts for one spine"
+    )
+    arg_parser.add_argument(
         "--visualize_vertebrae",
         action="store_true",
         default=False,
@@ -248,5 +260,5 @@ if __name__ == "__main__":
                         visualize=args.visualize_vertebrae,
                         nrPointsProPartialPC=int(args.nr_points_per_point_cloud),
                         nrPointsProCompletePC=int(args.nr_points_per_point_cloud),
-
+                        nr_shifts_per_sample=args.num_shifts
                         )

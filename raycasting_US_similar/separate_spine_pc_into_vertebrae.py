@@ -14,11 +14,14 @@ from utils import namings
     # increase the box size slightly in x direction
     # save as pointcloud all of the points within this bounding box
 
-def load_centered_spine_pcd(root_path_spine, spine_id, deform):
-    path_spine = os.path.join(root_path_spine,spine_id,"rendering","account_for_shadows_forcefield" + str(deform) + ".pcd")
+def load_centered_spine_pcd(root_path_spine, spine_id, deform, shift):
+
+    path_root_shifts = os.path.join(root_path_spine,spine_id,"shifts", namings.get_name_spine_lumbar_mesh_deformed_scaled_centered(spine_id,deform).split(".")[0])
+    path_shifts = sorted(os.listdir(path_root_shifts))
+    path_spine = os.path.join(path_root_shifts,path_shifts[shift],"account_for_shadow.pcd")
     print("Loading" + str(path_spine))
     spine_pcd = o3d.io.read_point_cloud(path_spine)
-    return spine_pcd
+    return spine_pcd, path_shifts
 
 def load_centered_scaled_vertebrae(root_path_vertebrae, spine_id, deform):
     paths_vertebrae = namings.get_paths_one_deformation_scaled_vertebrae(root_path_vertebrae,spine_id,deform)
@@ -44,11 +47,11 @@ def load_pcd(root_path_spine, spine_id, deform):
 
     return pcd
 
-def separate_US_pointcloud_into_vertebrae(root_path_spine, root_path_vertebrae, spine_id, deform,visualize=False):
+def separate_US_pointcloud_into_vertebrae(root_path_spine, root_path_vertebrae, spine_id, deform, shift, visualize=False):
     print("Separating US point cloud from: " + str(spine_id) + " and deformation " + str(deform))
 
     #  load the centered, scaled spine pcd
-    spine_pcd = load_centered_spine_pcd(root_path_spine, spine_id, deform)
+    spine_pcd, path_shifts = load_centered_spine_pcd(root_path_spine, spine_id, deform, shift)
 
     #  load vertebrae that are also scaled and centered
     vertebrae_meshes, vertebrae_paths = load_centered_scaled_vertebrae(root_path_vertebrae, spine_id, deform)
@@ -88,7 +91,12 @@ def separate_US_pointcloud_into_vertebrae(root_path_spine, root_path_vertebrae, 
 
         # save point cloud to the folder of the vertebra
         print("Writing the noisy pcd for " + vertebrae_paths[vert_ind])
-        o3d.io.write_point_cloud(vertebrae_paths[vert_ind].replace('.obj','.pcd'), curr_vert_pcd)
+        root_folder_vert = os.path.dirname( vertebrae_paths[vert_ind])
+        vert_name = os.path.basename(vertebrae_paths[vert_ind])
+        to_save_dir = os.path.join(root_folder_vert,"shifts",path_shifts[shift])
+        os.makedirs(to_save_dir,exist_ok=True)
+        output_pcd_path = os.path.join (to_save_dir,vert_name.replace('.obj','.pcd'))
+        o3d.io.write_point_cloud(output_pcd_path, curr_vert_pcd)
 
         if(visualize):
             o3d.visualization.draw([spine_pcd, bounding_box_curr_vert])
@@ -129,6 +137,12 @@ if __name__ == "__main__":
         help="Number of deformed spines per initial spine."
     )
     arg_parser.add_argument(
+        "--nr_shift_per_spine",
+        required=True,
+        dest="nr_shift_per_spine",
+        help="Number of deformed spines per initial spine."
+    )
+    arg_parser.add_argument(
         "--visualize",
         action="store_true",
         default=False,
@@ -148,4 +162,5 @@ if __name__ == "__main__":
 
     for spine_id in spine_ids:
         for deform in range(int(args.nr_deform_per_spine)):
-            separate_US_pointcloud_into_vertebrae(args.root_path_spines, args.root_path_vertebrae, spine_id, deform,visualize=args.visualize)
+            for shift in range(int(args.nr_shift_per_spine)):
+                separate_US_pointcloud_into_vertebrae(args.root_path_spines, args.root_path_vertebrae, spine_id, deform,shift,visualize=args.visualize)

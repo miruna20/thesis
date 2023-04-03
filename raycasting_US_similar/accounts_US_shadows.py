@@ -6,6 +6,12 @@ import argparse
 
 
 def delete_shadows_from_pcd(pcd0_path, pcd1_path, pcd_combined_path, save_path, visualize=False):
+
+    # for debugging
+    print("PCD init: " + str(pcd0_path))
+    print("PCD shifted: " + str(pcd1_path))
+    print("PCD merged: " + str(pcd_combined_path))
+
     # load pcd0, pcd1 and pcd_combo
     pcd0 = o3d.io.read_point_cloud(pcd0_path)
     pcd1 = o3d.io.read_point_cloud(pcd1_path)
@@ -88,6 +94,7 @@ if __name__ == '__main__':
         dest="num_deform",
         help="Number of deformations for one spine"
     )
+
     args = arg_parser.parse_args()
     print("Accounting for the shadows in US")
 
@@ -97,11 +104,22 @@ if __name__ == '__main__':
 
     for spine_id in spine_ids:
         print("For spine: " + str(spine_id))
-        path_to_pcds = os.path.join(args.root_paths_spines,spine_id,"rendering")
+
+        rendering_path = os.path.join(args.root_paths_spines,spine_id,"rendering")
+        root_dir = os.listdir(rendering_path)
+        path_to_init_pcds = []
+        for path in root_dir:
+            joined = os.path.join(rendering_path,path)
+            if os.path.isfile(joined):
+                path_to_init_pcds.append(path)
+
+        path_to_init_pcds = sorted(path_to_init_pcds)
         for deform in range(int(args.num_deform)):
-            all_paths = sorted(os.listdir(path_to_pcds))
-            paths_pcd = [path for path in all_paths if ".pcd" in path and "forcefield" + str(deform) in path]
-            delete_shadows_from_pcd(os.path.join(path_to_pcds, paths_pcd[0]),
-                                    os.path.join(path_to_pcds, paths_pcd[2]),
-                                    os.path.join(path_to_pcds, paths_pcd[1]),
-                                    os.path.join(path_to_pcds, "account_for_shadows_forcefield" +str(deform)+ ".pcd"))
+            name = path_to_init_pcds[deform].split(".")[0]
+            shifts_root = os.path.join(args.root_paths_spines, spine_id, "shifts",name)
+            for shift_dir in os.listdir(shifts_root):
+                curr_rendering = os.path.join(shifts_root,shift_dir,"rendering")
+                delete_shadows_from_pcd(pcd0_path=os.path.join(rendering_path,path_to_init_pcds[deform]),
+                                        pcd1_path=os.path.join(curr_rendering,name + "_shifted.pcd"),
+                                        pcd_combined_path=os.path.join(curr_rendering,name + "_merged.pcd"),
+                                        save_path=os.path.join(os.path.join(shifts_root,shift_dir,"account_for_shadow.pcd")))

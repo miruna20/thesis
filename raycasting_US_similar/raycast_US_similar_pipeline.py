@@ -53,6 +53,12 @@ if __name__ == '__main__':
         help="Number of deformations for one spine"
     )
     arg_parser.add_argument(
+        "--num_shifts",
+        required=True,
+        dest="num_shifts",
+        help="Number of shifts for one spine"
+    )
+    arg_parser.add_argument(
         "--nr_points_per_point_cloud",
         required=True,
         dest="nr_points_per_point_cloud",
@@ -73,6 +79,7 @@ if __name__ == '__main__':
     root_paths_vertebrae = args.root_paths_vertebrae
 
     num_deform = args.num_deform
+    num_shifts = args.num_shifts
     nr_points_per_point_cloud = args.nr_points_per_point_cloud
 
     list_spines = args.list_spines
@@ -98,7 +105,8 @@ if __name__ == '__main__':
         misc.create_list_all_deformed_scaled_spines_from_spineid(list_spines, list_paths_spines, root_paths_spines,
                                                                  num_deform)
         subprocess.run(['python', 'shift_and_merge_spine.py',
-                        '--list_paths_spine', list_paths_spines])
+                        '--list_paths_spine', list_paths_spines,
+                        '--num_shifts',num_shifts])
 
     if 'get_camera_poses' in pipeline or 'all' in pipeline:
         misc.create_list_all_deformed_scaled_vert_and_spines_from_spineid(list_spines,
@@ -115,7 +123,8 @@ if __name__ == '__main__':
         misc.create_list_init_shifted_merged_deformed_for_raycasting(spines_root=root_paths_spines,
                                                                      list_spines=list_spines,
                                                                      save_to=list_paths_for_raycasting,
-                                                                     num_deform=num_deform)
+                                                                     num_deform=num_deform,
+                                                                     num_shifts=num_shifts)
         subprocess.run(['python', 'generate_partial_pointclouds_from_spine.py',
                         '--list_paths_for_raycasting', list_paths_for_raycasting,
                         '--camera_poses', path_to_save_camera_poses_csv,
@@ -133,17 +142,19 @@ if __name__ == '__main__':
                         '--root_path_vertebrae', root_paths_vertebrae,
                         '--root_path_spines', root_paths_spines,
                         '--nr_deform_per_spine', num_deform,
+                        '--nr_shift_per_spine',num_shifts
                         ])
 
     if 'create_h5_dataset' in pipeline or 'all' in pipeline:
         # create the list of vertebrae that will be used to create the h5 dataset
 
         subprocess.run(['python', 'get_list_vertebrae_in_folders.py',
-            '--root_path_vertebrae', root_paths_vertebrae,
-            '--vert_list_to_save', list_paths_vertebrae,
-            '--list_file_names_spines', list_spines,
-            '--nr_deform_per_spine', num_deform
-            ])
+                        '--root_path_vertebrae', root_paths_vertebrae,
+                        '--vert_list_to_save', list_paths_vertebrae,
+                        '--list_file_names_spines', list_spines,
+                        '--nr_deform_per_spine', num_deform,
+                        '--num_shifts',num_shifts
+                        ])
 
         subprocess.run(['python', 'create_dataset_for_shape_completion.py',
                         '--vertebrae_list', list_paths_vertebrae,
@@ -151,6 +162,8 @@ if __name__ == '__main__':
                         '--result_h5_file', result_h5_file,
                         '--nr_deform_per_sample', num_deform,
                         '--nr_points_per_point_cloud', nr_points_per_point_cloud,
+                        '--num_shifts', num_shifts
                         #'--visualize_vertebrae'
                         ])
+
 
