@@ -3,8 +3,6 @@ import open3d as o3d
 import os
 from utils import namings
 
-# TODO think of how to improve the generated camera pose to contain the whole spine --> should we raycast above all 5 vert?
-# this would be more realistic ...
 # prolly it would be a good idea to visualize all of the vertebrae together with the 3 camera positions
 def generate_camera_poses( paths_ordered_vertebrae):
     """

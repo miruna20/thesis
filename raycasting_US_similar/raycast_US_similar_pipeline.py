@@ -19,9 +19,8 @@ if __name__ == '__main__':
         => shadowed pcd
     """
 
-    # Pipeline TODO s
     # TODO the polluted pointclouds after shadowing have very few points, how can we solve this?
-    # TODO L1 and L5 have very few points because we never raycast on top of them. Raycast from all 5 positions
+    # TODO apply acoustic shadowing should be performed symmetrically
 
     arg_parser = argparse.ArgumentParser(
         description="Generate dataset with complete and partial pointclouds from CT for shape completion")
