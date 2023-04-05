@@ -12,41 +12,53 @@ def delete_shadows_from_pcd(pcd0_path, pcd1_path, pcd_combined_path, save_path, 
     print("PCD shifted: " + str(pcd1_path))
     print("PCD merged: " + str(pcd_combined_path))
 
-    # load pcd0, pcd1 and pcd_combo
-    pcd0 = o3d.io.read_point_cloud(pcd0_path)
-    pcd1 = o3d.io.read_point_cloud(pcd1_path)
-    pcd_combined = o3d.io.read_point_cloud(pcd_combined_path)
+    # load pcd_init, pcd_shifted and pcd_combo
+    pcd_init = o3d.io.read_point_cloud(pcd0_path)
+    pcd_shifted = o3d.io.read_point_cloud(pcd1_path)
+    pcd_merged = o3d.io.read_point_cloud(pcd_combined_path)
 
     # merge all of these 3 in one point cloud to be able to get the knn tree which allows for closest neighbor search
     all_in_one_pcd = o3d.geometry.PointCloud()
     points_from_all_pcds_stacked = np.concatenate(
-        (np.asarray(pcd_combined.points), np.asarray(pcd0.points), np.asarray(pcd1.points)))
+        (np.asarray(pcd_merged.points), np.asarray(pcd_init.points), np.asarray(pcd_shifted.points)))
     all_in_one_pcd.points = o3d.utility.Vector3dVector(points_from_all_pcds_stacked)
     all_in_one_pcd.paint_uniform_color([0.5, 0.5, 0.5])
 
     # remember the order in which the points from the 3 point clouds are situated in the bigger point cloud
-    nr_points_in_combo = np.asarray(pcd_combined.points).shape[0]
-    nr_points_in_pcd0 = np.asarray(pcd0.points).shape[0]
-    nr_points_in_pcd1 = np.asarray(pcd1.points).shape[0]
+    # i.e the points in merged are the ones from [0 to nr_points_in_merged-1]
+    # the points from initial pcd are the ones from [nr_points_in_merged to nr_points_in_merged + nr_points_in_pcd_init-1]
+    # the points from shifted pcd are the ones from [nr_points_in_merged + nr_points_in_pcd_init to nr_points_in_merged + nr_points_in_pcd_init + nr_points_in_pcd_shifted-1 ]
+    nr_points_in_merged = np.asarray(pcd_merged.points).shape[0]
+    nr_points_in_pcd_init = np.asarray(pcd_init.points).shape[0]
+    nr_points_in_pcd_shifted = np.asarray(pcd_shifted.points).shape[0]
 
     pcd_tree = o3d.geometry.KDTreeFlann(all_in_one_pcd)
 
-    # will this be a list of points from pcd_combined or will this be a list of points from pcd0? --> it s the same result
+    # will this be a list of points from pcd_merged or will this be a list of points from pcd_init? --> it s the same result
     unshadowed_points = []
-    # at indices from 0 to nr_points_in_combo we can find points from the initial pcd_combined pcd
-    for idx_points_in_pcd_combined in range(0, nr_points_in_combo):
+    # at indices from 0 to nr_points_in_merged-1 we can find points from the initial pcd_merged pcd
+    for idx_points_in_pcd_merged in range(0, nr_points_in_merged):
         # find all points that are within a certain radius
-        [_, idx_neighbors, _] = pcd_tree.search_radius_vector_3d(all_in_one_pcd.points[idx_points_in_pcd_combined],
-                                                                 0.001)
+        [_, idx_neighbors, _] = pcd_tree.search_radius_vector_3d(all_in_one_pcd.points[idx_points_in_pcd_merged],
+                                                                 0.01)
 
-        # find index and therefore closest that is larger than nr_points_in_combo and smallest than nr_points_in_combo+nr_points_in_pcd1
-        # this means that this index will belong to a point in pcd0
-        index_closest_point = next(
-            filter(lambda index: index >= nr_points_in_combo and index < nr_points_in_combo + nr_points_in_pcd0,
+        # find index and therefore closest neighbor that is larger than nr_points_in_merged and smallest than nr_points_in_merged+nr_points_in_pcd_init-1
+        # this means that this index will belong to a point in pcd_init which is the initial poincloud
+        # so if there at least one point in the neighborhood that belongs to the initial, non shifted pointcloud we keep it and add it to the
+        # unshadowed points
+        idx_closest_points_from_init_pcd = [idx for idx in idx_neighbors if idx >= nr_points_in_merged and idx < nr_points_in_merged + nr_points_in_pcd_init]
+        """
+          index_closest_point = next(
+            filter(lambda index: index >= nr_points_in_merged and index < nr_points_in_merged + nr_points_in_pcd_init,
                    idx_neighbors), None)
 
         if (index_closest_point != None):
-            unshadowed_points.append(all_in_one_pcd.points[idx_points_in_pcd_combined])
+            unshadowed_points.append(all_in_one_pcd.points[index_closest_point])
+        """
+        # add all points that
+        for idx in idx_closest_points_from_init_pcd:
+            unshadowed_points.append(all_in_one_pcd.points[idx])
+
 
     # create a new point cloud with the points that have indexes in idx_of_unshadowed_points and visualize it if we cannot visualize the neighborhoods
     unshadowed_pcd = o3d.geometry.PointCloud()
@@ -117,9 +129,11 @@ if __name__ == '__main__':
         for deform in range(int(args.num_deform)):
             name = path_to_init_pcds[deform].split(".")[0]
             shifts_root = os.path.join(args.root_paths_spines, spine_id, "shifts",name)
-            for shift_dir in os.listdir(shifts_root):
+            for shift_dir in sorted(os.listdir(shifts_root)):
                 curr_rendering = os.path.join(shifts_root,shift_dir,"rendering")
                 delete_shadows_from_pcd(pcd0_path=os.path.join(rendering_path,path_to_init_pcds[deform]),
                                         pcd1_path=os.path.join(curr_rendering,name + "_shifted.pcd"),
                                         pcd_combined_path=os.path.join(curr_rendering,name + "_merged.pcd"),
                                         save_path=os.path.join(os.path.join(shifts_root,shift_dir,"account_for_shadow.pcd")))
+
+
