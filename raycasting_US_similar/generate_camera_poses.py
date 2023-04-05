@@ -65,20 +65,16 @@ def create_csv_with_camera_poses(list_path_spines_and_vert, camera_poses_csv_pat
         # create entry for the merged spine
         spine = os.path.basename(curr_spine_path).split("_")[0]
         deform = os.path.basename(curr_spine_path).split("_")[1][10]
-        name_spine_merged = namings.get_name_spine_lumbar_mesh_deformed_scaled_centered_merged(spine,deform)
-        csv_file.write(create_row(name_spine_merged.split(".")[0], camera_poses))
 
-        """
-        # accounting for symmetry 
-        
+        # accounting for symmetry
         # creating entry for the posx merged spine
         name_spine_posxmerged = namings.get_name_spine_lumbar_mesh_deformed_scaled_centered_posxmerged(spine,deform)
-        csv_file.write(create_row(name_spine_merged.split(".")[0], camera_poses))
+        csv_file.write(create_row(name_spine_posxmerged.split(".")[0], camera_poses))
         
         # creating entry for the negx merged spine
-        name_spine_posxmerged = namings.get_name_spine_lumbar_mesh_deformed_scaled_centered_negxmerged(spine,deform)
-        csv_file.write(create_row(name_spine_merged.split(".")[0], camera_poses))
-        """
+        name_spine_negxmerged = namings.get_name_spine_lumbar_mesh_deformed_scaled_centered_negxmerged(spine,deform)
+        csv_file.write(create_row(name_spine_negxmerged.split(".")[0], camera_poses))
+
 
 
 if __name__ == '__main__':

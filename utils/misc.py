@@ -40,12 +40,20 @@ def create_list_init_shifted_merged_deformed_for_raycasting(spines_root, list_sp
                 list.write(init_spine + "\n")
 
             for shift in range(int(num_shifts)):
-                merged_spine = os.path.join(shifts_path,
+                # add merged_spine_posx
+                merged_spine_posx = os.path.join(shifts_path,
                                             shifts_directories[shift],
-                                            namings.get_name_spine_lumbar_mesh_deformed_scaled_centered_merged(spine,
+                                            namings.get_name_spine_lumbar_mesh_deformed_scaled_centered_posxmerged(spine,
                                                                                                                deform))
-                if (os.path.isfile(merged_spine)):
-                    list.write(merged_spine + "\n")
+                # add merged_spine_negx
+                merged_spine_negx = os.path.join(shifts_path,
+                                            shifts_directories[shift],
+                                            namings.get_name_spine_lumbar_mesh_deformed_scaled_centered_negxmerged(spine,
+                                                                                                                deform))
+                if (os.path.isfile(merged_spine_posx)):
+                    list.write(merged_spine_posx + "\n")
+                if (os.path.isfile(merged_spine_negx)):
+                    list.write(merged_spine_negx + "\n")
 
 
 def write_list_row_by_row_to_txt_file(list, file):
