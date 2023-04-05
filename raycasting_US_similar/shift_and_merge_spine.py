@@ -1,7 +1,5 @@
 import os
 import argparse
-
-# TODO find a suitable range from we generate this random transformation
 import shutil
 
 
@@ -38,19 +36,15 @@ def transl_to_trafo(x, y):
     return trafo
 
 
-def shift_and_merge(trafo, path_lumbar_spine, path_to_save_shifted, path_to_save_merged):
-    placeholders = ['PathLumbarSpine', 'Trafo', 'PathToSaveShifted', 'PathToSaveMerged']
+def shift_and_merge(trafo, path_lumbar_spine, path_to_save_merged):
+    placeholders = ['PathLumbarSpine', 'Trafo', 'PathToSaveMerged']
     arguments_imfusion = ""
-    workspace_file_shift_and_merge = "../imfusion_workspaces/shift_and_merge_placeholders_withtrafo.iws"
+    workspace_file_shift_and_merge = "../imfusion_workspaces/shift_and_merge_placeholders.iws"
     for p in placeholders:
         if p == 'Trafo':
             value = '"' + str(trafo) + '"'
         if p == 'PathLumbarSpine':
             value = path_lumbar_spine
-
-        if p == 'PathToSaveShifted':
-            value = path_to_save_shifted
-
         if p == 'PathToSaveMerged':
             value = path_to_save_merged
 
@@ -58,7 +52,7 @@ def shift_and_merge(trafo, path_lumbar_spine, path_to_save_shifted, path_to_save
 
     # call imfusion with arguments
     print('ARGUMENTS: ', arguments_imfusion)
-    os.system("ImFusionConsole" + " " + workspace_file_shift_and_merge + " " + arguments_imfusion)
+    os.system("ImFusionSuite" + " " + workspace_file_shift_and_merge + " " + arguments_imfusion)
     print('################################################### ')
 
 
@@ -87,8 +81,13 @@ if __name__ == '__main__':
         paths_spines_list = file.read().splitlines()
 
     # determine the values for the shifts in x and y direction
-    x_shifts = [0.01, 0.03, 0.05, 0.07, 0.1, 0.15, 0.2]
+    # too small x shifts: 0.01, 0.03, too large x shifts > 0.3
+    # too large y shifts > -0.1, too small shifts occur too much e.g -0.01, -0.03
+    x_shifts = [ 0.05, 0.07, 0.1, 0.15, 0.2, 0.25]
     y_shifts = [-0.01, -0.03, -0.05, -0.07, -0.1]
+
+    # larger y lead to less occlusion
+    # larger x models spines that are more similar to Maria's spine
 
     # get all of the combinations of shifts and make sure they match the num_shifts passed
     unique_comb_of_shifts = generate_all_combinations_of_trafo(x_shifts, y_shifts)
@@ -117,9 +116,22 @@ if __name__ == '__main__':
                                         "shiftx" + str(transl[0]) + "_shifty" + str(transl[1]))
             os.makedirs(shift_folder, exist_ok=True)
 
-            # get the trafo as string
-            trafo = transl_to_trafo(transl[0], transl[1])
+            # get the trafo as string for +x, and y
+            trafo = transl_to_trafo(abs(transl[0]), transl[1])
             shift_and_merge(trafo=trafo,
                             path_lumbar_spine=path,
-                            path_to_save_shifted=os.path.join(shift_folder, spine_id + "_shifted.obj"),
                             path_to_save_merged=os.path.join(shift_folder, spine_id + "_merged.obj"))
+
+            """
+            # later on we apply the shadowing symmetrically so we need to shift and merge in pos and neg x direction
+            trafo = transl_to_trafo(abs(transl[0]), transl[1])
+            shift_and_merge(trafo=trafo,
+                            path_lumbar_spine=path,
+                            path_to_save_merged=os.path.join(shift_folder, spine_id + "posx_merged.obj"))
+            # get the trafo as string for -x and y
+            trafo = transl_to_trafo(-abs(transl[0]), transl[1])
+            shift_and_merge(trafo=trafo,
+                            path_lumbar_spine=path,
+                            path_to_save_merged=os.path.join(shift_folder, spine_id + "negx_merged.obj"))
+
+            """

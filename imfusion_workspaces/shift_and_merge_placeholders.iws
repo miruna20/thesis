@@ -48,17 +48,6 @@
 			</property>
 		</property>
 		<property name="Mesh File">
-			<param name="location">%(PathToSaveShifted)</param>
-			<param name="applyMatrixBeforeSaving">1</param>
-			<param name="saveTexture">1</param>
-			<param name="loadScaling">1</param>
-			<param name="mergeDuplicateVertices">1</param>
-			<param name="forceNoChecks">0</param>
-			<param name="execute">1</param>
-			<param name="inputUids">"data0" </param>
-			<param name="outputUids"/>
-		</property>
-		<property name="Mesh File">
 			<param name="location">%(PathLumbarSpine)</param>
 			<param name="applyMatrixBeforeSaving">1</param>
 			<param name="saveTexture">1</param>

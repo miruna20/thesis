@@ -19,6 +19,12 @@ def get_name_spine_lumbar_mesh_scaled_centered_merged(spine_id):
 def get_name_spine_lumbar_mesh_deformed_scaled_centered_merged(spine_id,deform):
     return spine_id + "_forcefield" + str(deform) + "_lumbar_deformed_centered_scaled_merged.obj"
 
+def get_name_spine_lumbar_mesh_deformed_scaled_centered_posxmerged(spine_id,deform):
+    return spine_id + "_forcefield" + str(deform) + "_lumbar_deformed_centered_scaled_posxmerged.obj"
+
+def get_name_spine_lumbar_mesh_deformed_scaled_centered_negxmerged(spine_id,deform):
+    return spine_id + "_forcefield" + str(deform) + "_lumbar_deformed_centered_scaled_negxmerged.obj"
+
 def get_name_spine_lumbar_mesh_deformed(spine_id,deform):
     return spine_id + "_forcefield" + str(deform) + "_lumbar_deformed_centered.obj"
 
