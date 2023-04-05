@@ -48,8 +48,21 @@ def shadow_one_x_side(pcd_init, pcd_merged, pos=True):
 
     return unshadowed_points
 
+def add_noise(pcd, sigma):
+    """
+    Adds gaussian noise to the point cloud
+    """
+    # sample a vector that is from a gaussian distribution (num_points x 3)
+    individual_points_shifts = np.random.normal(loc=0.0, scale=sigma, size=np.asarray(pcd.points).shape)
 
-def delete_shadows_from_pcd(pcd_init, pcd_merged_posx, pcd_merged_negx, save_path, visualize=False):
+    # then add it to the pcd.points
+    pcd.points = o3d.utility.Vector3dVector(np.asarray( pcd.points )+ individual_points_shifts)
+
+    return pcd
+def delete_shadows_from_pcd(pcd_init, pcd_merged_posx, pcd_merged_negx, save_path, add_noise_flag, visualize=False):
+    """
+    Accounts for the shadow that occurs because of the shifted pcd on the initial pcd
+    """
     # for debugging
     print("PCD init: " + str(pcd_init))
     print("PCD merged posx: " + str(pcd_merged_posx))
@@ -74,6 +87,12 @@ def delete_shadows_from_pcd(pcd_init, pcd_merged_posx, pcd_merged_negx, save_pat
         o3d.visualization.draw_geometries([shadowed_pcd])
 
     o3d.io.write_point_cloud(save_path, shadowed_pcd)
+
+    if(add_noise_flag):
+        sigma = 0.01
+        noisy_pcd = add_noise(shadowed_pcd,sigma)
+        o3d.io.write_point_cloud(save_path.replace(".pcd", "_noisy_sigma" + str(sigma) + ".pcd"), noisy_pcd)
+
 
 
 if __name__ == '__main__':
@@ -110,6 +129,14 @@ if __name__ == '__main__':
         dest="num_deform",
         help="Number of deformations for one spine"
     )
+    arg_parser.add_argument(
+        "--add_noise",
+        action="store_true",
+        default=False,
+        dest="add_noise",
+        help="Activate flag for adding gaussian noise to the pcd"
+    )
+
 
     args = arg_parser.parse_args()
     print("Accounting for the shadows in US")
@@ -140,4 +167,5 @@ if __name__ == '__main__':
                 delete_shadows_from_pcd(pcd_init=os.path.join(rendering_path, path_to_init_pcds[deform]),
                                         pcd_merged_posx=os.path.join(curr_rendering, name + "_posx_merged.pcd"),
                                         pcd_merged_negx=os.path.join(curr_rendering, name + "_negx_merged.pcd"),
-                                        save_path=os.path.join(os.path.join(shifts_root, shift_dir, "account_for_shadow.pcd")))
+                                        save_path=os.path.join(os.path.join(shifts_root, shift_dir, "account_for_shadow.pcd")),
+                                        add_noise_flag=args.add_noise)

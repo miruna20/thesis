@@ -134,7 +134,10 @@ if __name__ == '__main__':
         subprocess.run(['python', 'accounts_US_shadows.py',
                         '--root_paths_spines', root_paths_spines,
                         '--list_spines', list_spines,
-                        '--num_deform', num_deform])
+                        '--num_deform', num_deform,
+                        '--add_noise'
+                        ])
+
 
     if 'separate_spine_pc_into_vert' in pipeline or 'all' in pipeline:
         subprocess.run(['python', 'separate_spine_pc_into_vertebrae.py',

@@ -74,6 +74,7 @@ if __name__ == '__main__':
         help="Number of shifts applied on the spine"
     )
 
+
     args = arg_parser.parse_args()
 
     # read a list of the spines that we want to process
