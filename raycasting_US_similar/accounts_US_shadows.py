@@ -48,15 +48,18 @@ def shadow_one_x_side(pcd_init, pcd_merged, pos=True):
 
     return unshadowed_points
 
+# apply this on the fly
 def add_noise(pcd, sigma):
     """
     Adds gaussian noise to the point cloud
     """
     # sample a vector that is from a gaussian distribution (num_points x 3)
-    individual_points_shifts = np.random.normal(loc=0.0, scale=sigma, size=np.asarray(pcd.points).shape)
+    individual_points_shifts_y_axis = np.random.normal(loc=0.0, scale=sigma, size=np.asarray(pcd.points).shape[0])
 
     # then add it to the pcd.points
-    pcd.points = o3d.utility.Vector3dVector(np.asarray( pcd.points )+ individual_points_shifts)
+    new_points = np.asarray(pcd.points)
+    new_points[:,1] += individual_points_shifts_y_axis
+    pcd.points = o3d.utility.Vector3dVector(new_points)
 
     return pcd
 def delete_shadows_from_pcd(pcd_init, pcd_merged_posx, pcd_merged_negx, save_path, add_noise_flag, visualize=False):

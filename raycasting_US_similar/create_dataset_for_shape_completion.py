@@ -27,6 +27,7 @@ def processOneVertebra(pathCompleteVertebra, pathToPartialPCD, nrPointsProPartia
     # load complete vertebra and its partial point cloud
     completeVertebra = o3d.io.read_triangle_mesh(pathCompleteVertebra)
     partial_pcd = o3d.io.read_point_cloud(pathToPartialPCD)
+    print("Path to partial pcd " + str(pathToPartialPCD))
 
     # delete all points that are below the center of mass of completeVert
     """
@@ -67,28 +68,32 @@ def processOneVertebra(pathCompleteVertebra, pathToPartialPCD, nrPointsProPartia
     # if yes then sample this number directly
     # if it has at least half of the nrPointsProPartialPC duplicate the number of points then resample
     nr_points_in_partial_pcd = np.asarray(partial_pcd.points).shape[0]
+    print("Initial number of points in pcd:" + str(nr_points_in_partial_pcd))
     if(nr_points_in_partial_pcd >= nrPointsProPartialPC):
-        sampled_partial_pcd = partial_pcd.farthest_point_down_sample(nrPointsProPartialPC)
-    elif(nr_points_in_partial_pcd >= nrPointsProPartialPC/2):
-        # duplicate the number of points available
-        print("Duplicated the number of points")
-        sampled_partial_pcd = partial_pcd.farthest_point_down_sample(int(nrPointsProPartialPC/2))
-        duplicated_points = np.repeat(np.asarray(sampled_partial_pcd.points), repeats=2, axis=0)
-        sampled_partial_pcd.points = o3d.utility.Vector3dVector(np.asarray(duplicated_points))
+        sampled_partial_pcd = partial_pcd.random_down_sample(nrPointsProPartialPC/(nr_points_in_partial_pcd-1))
     else:
         print("PCD with less than " + str(nrPointsProPartialPC) + "points" + str(os.path.basename(pathToPartialPCD)))
         return 0, []
+    """
+    elif(nr_points_in_partial_pcd >= nrPointsProPartialPC/2):
+        # duplicate the number of points available
+        print("Duplicated the number of points")
+        sampled_partial_pcd = partial_pcd.random_down_sample(int(nrPointsProPartialPC/2))
+        duplicated_points = np.repeat(np.asarray(sampled_partial_pcd.points), repeats=2, axis=0)
+        sampled_partial_pcd.points = o3d.utility.Vector3dVector(np.asarray(duplicated_points))
+    """
+
+
     if (visualize):
         coord_sys = o3d.geometry.TriangleMesh.create_coordinate_frame()
 
         print("Visualizing input and ground truth after scaling and centering")
         pointCloudComplete.paint_uniform_color([0,1,0])
         partial_pcd.paint_uniform_color([0,0,1])
-        o3d.visualization.draw([partial_pcd, coord_sys])
+        o3d.visualization.draw([partial_pcd,coord_sys])
 
     partial_pcds = []
     partial_pcds.append(np.asarray(sampled_partial_pcd.points))
-
     return np.asarray(pointCloudComplete.points), partial_pcds
 
 
@@ -172,7 +177,7 @@ def processAllVertebrae(list_path, rootDirectoryVertebrae, saveTo,
                 # if the partial point cloud has less than nrPointsProPartialPC then partial_pcds will be an empty list
                 if len(partial_pcds) == 0:
                     continue
-
+                print(partial_pcds[0].shape)
                 # add it to h5py
                 # make sure that the smallest label will be 0
                 label_normalized = extractLabel(model_id) - min_label

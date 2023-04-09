@@ -3,6 +3,7 @@ import ast
 import os
 import subprocess
 from utils import misc
+from time import process_time
 
 if __name__ == '__main__':
 
@@ -11,16 +12,13 @@ if __name__ == '__main__':
     1. Shift initial spine, merge shifted with original 
         => initial spine, shifted spine, merged spine 
     2. Raycast each of the above spines from 3 camera positions which will be above the spinous
-    processes of L2, L3, L4. For each spine merge the 3 obtained pcds
+    processes of L1, L2, L3, L4, L5. For each spine merge the 5 obtained pcds
         - for this we need the exact camera poses from which we will raycast
         => raycasted pcd initial spine, raycasted pcd shifted spine, raycasted pcd merged spine 
     3. Account for US artefacts by loading all 3 prev obtained pcds and removing the shadowing 
     obtained by overlapping of the shifted on the initial 
         => shadowed pcd
     """
-
-    # TODO the polluted pointclouds after shadowing have very few points, how can we solve this?
-    # TODO apply acoustic shadowing should be performed symmetrically
 
     arg_parser = argparse.ArgumentParser(
         description="Generate dataset with complete and partial pointclouds from CT for shape completion")
@@ -73,8 +71,9 @@ if __name__ == '__main__':
     )
 
     args = arg_parser.parse_args()
-
+    print(args)
     pipeline = args.pipeline
+
     root_paths_spines = args.root_paths_spines
     root_paths_vertebrae = args.root_paths_vertebrae
 
@@ -94,6 +93,8 @@ if __name__ == '__main__':
 
     result_h5_file = os.path.join(root_paths_vertebrae, "dataset.h5")
     path_blender_executable = "/home/miruna20/Documents/Thesis/Code/Preprocessing/blender-2.79-linux-glibc219-x86_64"
+
+    pipeline = ['shift_and_merge','get_camera_poses','raycast','account_US_shadows','separate_spine_pc_into_vert']
 
     if 'scale_down_mesh' in pipeline or 'all' in pipeline:
         misc.create_list_all_deformed_vert_and_spines_from_spineid(list_spines, list_paths_spines_and_vert_for_scaling,
@@ -130,14 +131,14 @@ if __name__ == '__main__':
                         '--camera_poses', path_to_save_camera_poses_csv,
                         '--path_blender_executable', path_blender_executable])
 
+        misc.delete_paths(list_paths_for_raycasting)
     if 'account_US_shadows' in pipeline or 'all' in pipeline:
         subprocess.run(['python', 'accounts_US_shadows.py',
                         '--root_paths_spines', root_paths_spines,
                         '--list_spines', list_spines,
                         '--num_deform', num_deform,
-                        '--add_noise'
                         ])
-
+        # TODO here also delete the raycasting folder
 
     if 'separate_spine_pc_into_vert' in pipeline or 'all' in pipeline:
         subprocess.run(['python', 'separate_spine_pc_into_vertebrae.py',

@@ -2,6 +2,7 @@ import os
 import argparse
 import shutil
 
+#TODO redo 532 force 1
 
 def generate_all_combinations_of_trafo(x_shifts, y_shifts):
     """
@@ -14,17 +15,6 @@ def generate_all_combinations_of_trafo(x_shifts, y_shifts):
             unique_combinations.append((x_shifts[i], y_shifts[j]))
 
     return unique_combinations
-
-
-def generate_random_trafo():
-    """
-    Given intervals of values for shifts along x and y axis generate a random combo
-    :return:
-    """
-    transl = [0.05, 0, 0]
-    trafo = "1 0 0 " + str(transl[0]) + " 0 1 0 " + str(transl[1]) + " 0 0 1 " + str(transl[2]) + " 0 0 0 1"
-    return trafo, transl
-
 
 def transl_to_trafo(x, y):
     """
@@ -52,7 +42,7 @@ def shift_and_merge(trafo, path_lumbar_spine, path_to_save_merged):
 
     # call imfusion with arguments
     print('ARGUMENTS: ', arguments_imfusion)
-    os.system("ImFusionSuite" + " " + workspace_file_shift_and_merge + " " + arguments_imfusion)
+    os.system("ImFusionConsole" + " " + workspace_file_shift_and_merge + " " + arguments_imfusion)
     print('################################################### ')
 
 
@@ -74,25 +64,14 @@ if __name__ == '__main__':
         help="Number of shifts applied on the spine"
     )
 
-
     args = arg_parser.parse_args()
 
     # read a list of the spines that we want to process
     with open(args.txt_file) as file:
         paths_spines_list = file.read().splitlines()
 
-    # determine the values for the shifts in x and y direction
-    # too small x shifts: 0.01, 0.03, too large x shifts > 0.3
-    # too large y shifts > -0.1, too small shifts occur too much e.g -0.01, -0.03
-    #x_shifts = [ 0.05, 0.07, 0.1, 0.15, 0.2, 0.25]
-    #y_shifts = [-0.01, -0.03, -0.05, -0.07, -0.1]
-
-    x_shifts = [0.1]
-    y_shifts = [-0.07]
-
-    # larger y lead to less occlusion
-    # larger x models spines that are more similar to Maria's spine
-
+    x_shifts = [ 0.05, 0.07, 0.1]
+    y_shifts = [-0.01, -0.05, -0.1]
     # get all of the combinations of shifts and make sure they match the num_shifts passed
     unique_comb_of_shifts = generate_all_combinations_of_trafo(x_shifts, y_shifts)
     if (len(unique_comb_of_shifts) != int(args.num_shifts)):

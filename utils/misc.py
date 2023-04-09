@@ -106,3 +106,13 @@ def create_list_all_deformed_scaled_vert_and_spines_from_spineid(list_of_spine_i
             list.write(paths_deformed_spine[deform] + "\n")
             vert_of_current_deform = [path for path in paths_deformed_vertebrae if "forces" + str(deform) in path]
             write_list_row_by_row_to_txt_file(vert_of_current_deform, list)
+
+def delete_paths(list_of_paths):
+    with open(list_of_paths) as file:
+        paths = file.read().splitlines()
+
+    for path in paths:
+        if "negx" in path or "posx" in path:
+            os.remove(path)
+
+
