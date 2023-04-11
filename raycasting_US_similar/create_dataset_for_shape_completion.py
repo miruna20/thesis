@@ -50,15 +50,6 @@ def processOneVertebra(pathCompleteVertebra, pathToPartialPCD, nrPointsProPartia
     completeVertebra.vertices = o3d.utility.Vector3dVector(completeVertebra.vertices - center_vertebra)
     partial_pcd.points = o3d.utility.Vector3dVector(partial_pcd.points - center_vertebra)
 
-    if (visualize):
-        print("After centering")
-        coord_sys = o3d.geometry.TriangleMesh.create_coordinate_frame()
-
-        print("Visualizing input and ground truth after scaling and centering")
-        completeVertebra.paint_uniform_color([0, 1, 0])
-        partial_pcd.paint_uniform_color([0, 0, 1])
-        o3d.visualization.draw([partial_pcd, coord_sys,completeVertebra])
-
     # sample complete vertebra with the poisson disk sampling technique
     pointCloudComplete = o3d.geometry.TriangleMesh.sample_points_poisson_disk(completeVertebra, nrPointsProCompletePC)
 
@@ -74,15 +65,6 @@ def processOneVertebra(pathCompleteVertebra, pathToPartialPCD, nrPointsProPartia
     else:
         print("PCD with less than " + str(nrPointsProPartialPC) + "points" + str(os.path.basename(pathToPartialPCD)))
         return 0, []
-    """
-    elif(nr_points_in_partial_pcd >= nrPointsProPartialPC/2):
-        # duplicate the number of points available
-        print("Duplicated the number of points")
-        sampled_partial_pcd = partial_pcd.random_down_sample(int(nrPointsProPartialPC/2))
-        duplicated_points = np.repeat(np.asarray(sampled_partial_pcd.points), repeats=2, axis=0)
-        sampled_partial_pcd.points = o3d.utility.Vector3dVector(np.asarray(duplicated_points))
-    """
-
 
     if (visualize):
         coord_sys = o3d.geometry.TriangleMesh.create_coordinate_frame()
@@ -90,7 +72,7 @@ def processOneVertebra(pathCompleteVertebra, pathToPartialPCD, nrPointsProPartia
         print("Visualizing input and ground truth after scaling and centering")
         pointCloudComplete.paint_uniform_color([0,1,0])
         partial_pcd.paint_uniform_color([0,0,1])
-        o3d.visualization.draw([partial_pcd,coord_sys])
+        o3d.visualization.draw([partial_pcd,coord_sys,pointCloudComplete])
 
     partial_pcds = []
     partial_pcds.append(np.asarray(sampled_partial_pcd.points))

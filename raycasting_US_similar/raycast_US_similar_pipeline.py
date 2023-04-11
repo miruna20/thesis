@@ -74,6 +74,9 @@ if __name__ == '__main__':
     print(args)
     pipeline = args.pipeline
 
+    # cover the case in which we call this pipeline from another script
+    #TODO does this always work?
+    pipeline.extend(pipeline[0].split())
     root_paths_spines = args.root_paths_spines
     root_paths_vertebrae = args.root_paths_vertebrae
 
@@ -93,8 +96,6 @@ if __name__ == '__main__':
 
     result_h5_file = os.path.join(root_paths_vertebrae, "dataset.h5")
     path_blender_executable = "/home/miruna20/Documents/Thesis/Code/Preprocessing/blender-2.79-linux-glibc219-x86_64"
-
-    pipeline = ['shift_and_merge','get_camera_poses','raycast','account_US_shadows','separate_spine_pc_into_vert']
 
     if 'scale_down_mesh' in pipeline or 'all' in pipeline:
         misc.create_list_all_deformed_vert_and_spines_from_spineid(list_spines, list_paths_spines_and_vert_for_scaling,
@@ -138,7 +139,6 @@ if __name__ == '__main__':
                         '--list_spines', list_spines,
                         '--num_deform', num_deform,
                         ])
-        # TODO here also delete the raycasting folder
 
     if 'separate_spine_pc_into_vert' in pipeline or 'all' in pipeline:
         subprocess.run(['python', 'separate_spine_pc_into_vertebrae.py',
