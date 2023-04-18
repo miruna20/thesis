@@ -65,6 +65,11 @@ def get_name_polluted_vert_pcd(vert_folder_name,deform):
     name = vert_folder_name + "_forces" + str(deform) + "_deformed_centered_20_0_scaled.pcd"
     return name
 
+def get_name_unpolluted_vert_pcd(vert_folder_name,deform):
+    name = vert_folder_name + "_forces" + str(deform) + "_deformed_centered_20_0_scaled_clean.pcd"
+    return name
+
+
 def get_paths_vertebrae(root_vert,spine_id):
     paths_vertebrae = []
     for i in range(20,25):
