@@ -83,7 +83,7 @@ if __name__ == '__main__':
         print("Processing: " + str(spine_id))
         list.close()
 
-        subprocess.run(['python', 'raycast_US_similar_pipeline.py',
+        subprocess.run(['python', '00_polluted_pcds_pipeline.py',
                         '--root_paths_spines', args.root_paths_spines,
                         '--root_paths_vertebrae', args.root_paths_vertebrae,
                         '--list_spines', save_to_temp,
@@ -94,7 +94,7 @@ if __name__ == '__main__':
 
 
     # after everything is done for all spines, call the create_h5_dataset once
-    subprocess.run(['python', 'raycast_US_similar_pipeline.py',
+    subprocess.run(['python', '00_polluted_pcds_pipeline.py',
                     '--root_paths_spines', args.root_paths_spines,
                     '--root_paths_vertebrae', args.root_paths_vertebrae,
                     '--list_spines', args.list_spines,

@@ -62,6 +62,14 @@ def processOneVertebra(pathCompleteVertebra, pathToPartialPCD, nrPointsProPartia
     print("Initial number of points in pcd:" + str(nr_points_in_partial_pcd))
     if(nr_points_in_partial_pcd >= nrPointsProPartialPC):
         sampled_partial_pcd = partial_pcd.random_down_sample(nrPointsProPartialPC/(nr_points_in_partial_pcd-1))
+        """
+        sampled_partial_pcd = partial_pcd.farthest_point_down_sample(nrPointsProPartialPC)
+        if np.asarray(sampled_partial_pcd.points).shape[0] < nrPointsProPartialPC:
+            sampled_partial_pcd = partial_pcd.farthest_point_down_sample(int(nrPointsProPartialPC / 2))
+            duplicated_points = np.repeat(np.asarray(sampled_partial_pcd.points), repeats=2, axis=0)
+            sampled_partial_pcd.points = o3d.utility.Vector3dVector(np.asarray(duplicated_points))
+        """
+
     else:
         print("PCD with less than " + str(nrPointsProPartialPC) + "points" + str(os.path.basename(pathToPartialPCD)))
         return 0, []
