@@ -57,46 +57,61 @@ def separate_US_pointcloud_into_vertebrae(root_path_spine, root_path_vertebrae, 
     #  load vertebrae that are also scaled and centered
     vertebrae_meshes, vertebrae_paths = load_centered_scaled_vertebrae(root_path_vertebrae, spine_id, deform)
 
-    # for each individual vertebra from this spine before merging
+    pcd_meshes = []
+    # create a list with pcds of the meshes
     for vert_ind in range(5):
-        curr_vert_mesh = vertebrae_meshes[vert_ind]
+        pcd_mesh = vertebrae_meshes[vert_ind].sample_points_uniformly(number_of_points=10000)
+        pcd_meshes.append(pcd_mesh)
 
-        # trafo mesh to pcd
-        pcd_mesh = curr_vert_mesh.sample_points_uniformly(number_of_points=10000000)
+    # unite the pcd from the spine with the pcds from the meshes
+    pcd_combined = o3d.geometry.PointCloud()
+    points_combined = np.concatenate((np.asarray(spine_pcd.points), np.asarray(pcd_meshes[0].points), np.asarray(pcd_meshes[1].points), np.asarray(pcd_meshes[2].points), np.asarray(pcd_meshes[3].points), np.asarray(pcd_meshes[4].points)))
+    pcd_combined.points = o3d.utility.Vector3dVector(points_combined)
+    pcd_tree = o3d.geometry.KDTreeFlann(pcd_combined)
 
-        # unite in one pcd both the spine pcd and the mesh pcd
-        pcd_vert_spine = o3d.geometry.PointCloud()
-        points_vert_spine = np.concatenate((np.asarray(spine_pcd.points), np.asarray(pcd_mesh.points)))
-        pcd_vert_spine.points = o3d.utility.Vector3dVector(points_vert_spine)
-        pcd_vert_spine.paint_uniform_color([0.5, 0.5, 0.5])
+    nr_points_in_spine = np.asarray(spine_pcd.points).shape[0]
+    shapes = [np.asarray(pcd_mesh.points).shape[0] for pcd_mesh in pcd_meshes]
 
-        # kdtree distance computation
-        pcd_tree = o3d.geometry.KDTreeFlann(pcd_vert_spine)
+    # iterate only once over the spine pcd and check which points belong to which vertebra
+    clean_points_all_vert= [[],[],[],[],[]]
+    for idx_point_in_spine_pcd in range(0, nr_points_in_spine):
+        curr_point = pcd_combined.points[idx_point_in_spine_pcd]
 
-        # iterate over all points that are in the spine point cloud
-        # TODO can we optimize this to iterate over all points of the point cloud only once?
-        clean_pcd = []
-        for idx_point_in_spine_pcd in range(0, np.asarray(spine_pcd.points).shape[0]):
-            curr_point = pcd_vert_spine.points[idx_point_in_spine_pcd]
+        [_, idx_neighbors, _] = pcd_tree.search_radius_vector_3d(curr_point, 0.01)
+        index_closest_point = next(filter(lambda index: index >= np.asarray(spine_pcd.points).shape[0], idx_neighbors),
+                                   None)
 
-            [_, idx_neighbors, _] = pcd_tree.search_radius_vector_3d(curr_point, 0.01)
-            index_closest_point = next(filter(lambda index: index >= np.asarray(spine_pcd.points).shape[0],idx_neighbors), None)
+        # verify to which vertebra this point belongs
+        if (index_closest_point != None):
+            # it belongs to the first vertebra
+            if nr_points_in_spine < index_closest_point < nr_points_in_spine + shapes[0]:
+                clean_points_all_vert[0].append(curr_point)
+            elif nr_points_in_spine + shapes[0] < index_closest_point < nr_points_in_spine + shapes[0] + shapes[1]:
+                clean_points_all_vert[1].append(curr_point)
+            elif nr_points_in_spine + shapes[0] + shapes[1] < index_closest_point < nr_points_in_spine + shapes[0] + shapes[1] + shapes[2]:
+                clean_points_all_vert[2].append(curr_point)
+            elif nr_points_in_spine + shapes[0] + shapes[1] + shapes[2] < index_closest_point < nr_points_in_spine + shapes[0] + shapes[1] + shapes[2] + shapes[3]:
+                clean_points_all_vert[3].append(curr_point)
+            elif nr_points_in_spine + shapes[0] + shapes[1] + shapes[2] + shapes[3] < index_closest_point < nr_points_in_spine + shapes[0] + shapes[1] + shapes[2] + shapes[3] + shapes[4]:
+                clean_points_all_vert[4].append(curr_point)
 
-            if(index_closest_point!=None):
-                clean_pcd.append(spine_pcd.points[idx_point_in_spine_pcd])
+    for vert_ind in range(5):
+        curr_clean_points = clean_points_all_vert[vert_ind]
 
-        # write points belonging to the curr vert to a new point cloud
+        # create point cloud from clean set of points
         curr_vert_pcd = o3d.geometry.PointCloud()
-        curr_vert_pcd.points = o3d.utility.Vector3dVector(np.asarray(clean_pcd))
+        curr_vert_pcd.points = o3d.utility.Vector3dVector(np.asarray(curr_clean_points))
 
-        # save point cloud to the folder of the vertebra
+        # get output dir
         print("Writing the clean pcd for " + vertebrae_paths[vert_ind])
-        root_folder_vert = os.path.dirname( vertebrae_paths[vert_ind])
+        root_folder_vert = os.path.dirname(vertebrae_paths[vert_ind])
         vert_name = os.path.basename(vertebrae_paths[vert_ind])
         to_save_dir = os.path.join(root_folder_vert,"shifts",path_shifts[shift])
         os.makedirs(to_save_dir,exist_ok=True)
         output_pcd_path = os.path.join (to_save_dir,vert_name.replace('.obj','_clean.pcd'))
         print("output path:" + str(output_pcd_path))
+
+        # save pcd
         o3d.io.write_point_cloud(output_pcd_path, curr_vert_pcd)
 
         if(visualize):
