@@ -64,7 +64,8 @@ def processOneVertebra(pathCompleteVertebra, pathToPartialPCD, nrPointsProPartia
     nr_points_in_partial_pcd = np.asarray(partial_pcd.points).shape[0]
     logging.debug("Initial number of points in pcd:" + str(nr_points_in_partial_pcd))
     if (nr_points_in_partial_pcd >= nrPointsProPartialPC):
-        sampled_partial_pcd = fps.fps_points(np.asarray(partial_pcd.points), num_samples=nr_points_in_partial_pcd)
+        sampled_partial_pcd = fps.fps_points(np.asarray(partial_pcd.points), num_samples=nrPointsProPartialPC)
+        print("Number of points after sampling: " + str(sampled_partial_pcd.shape[0]))
     else:
         logging.debug("PCD with less than " + str(nrPointsProPartialPC) + "points" + str(os.path.basename(pathToPartialPCD)))
         return 0, []
