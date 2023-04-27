@@ -177,6 +177,9 @@ if __name__ == "__main__":
         spine_ids = [line.strip() for line in file]
 
     for spine_id in spine_ids:
-        for deform in range(int(args.nr_deform_per_spine)):
-            for shift in range(int(args.nr_shift_per_spine)):
-                separate_US_pointcloud_into_vertebrae(args.root_path_spines, args.root_path_vertebrae, spine_id, deform,shift,visualize=args.visualize)
+        try:
+            for deform in range(int(args.nr_deform_per_spine)):
+                for shift in range(int(args.nr_shift_per_spine)):
+                    separate_US_pointcloud_into_vertebrae(args.root_path_spines, args.root_path_vertebrae, spine_id, deform,shift,visualize=args.visualize)
+        except:
+            print("Something went wrong with processing" + str( spine_id))
