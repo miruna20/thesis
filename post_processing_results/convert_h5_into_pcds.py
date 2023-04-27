@@ -43,7 +43,12 @@ if __name__ == "__main__":
     dataset_with_names = h5py.File(args.path_dataset_with_names, 'r')
 
     pcds = np.array(dataset[args.dataset_entry][()])
+    #nr_pcds = pcds.shape[0]
     names = np.array(dataset_with_names['datasets_ids'])
+    if(len(names) == 0):
+        names = []
+        for idx in range(nr_pcds):
+            names.append(str(idx))
 
     os.makedirs(args.root_path_pcds, exist_ok=True)
     for i in range(nr_pcds):
@@ -61,7 +66,11 @@ if __name__ == "__main__":
         if('results' in args.path_dataset):
             o3d.io.write_point_cloud(os.path.join(args.root_path_pcds,str(names[i]) + "_" + str(pcds.shape[1]) + "_reconstruction.ply"), filtered_pcd)
         else:
-            o3d.io.write_point_cloud(os.path.join(args.root_path_pcds,str(names[i])+ "_" + str(pcds.shape[1]) + "_GT.ply"), filtered_pcd)
+            # downsample before saving
+            nr_points_to_downsample_to = 4096
+            if(np.asarray(filtered_pcd.points).shape[0]-1 > nr_points_to_downsample_to):
+                filtered_pcd = filtered_pcd.random_down_sample(4096/(np.asarray(filtered_pcd.points).shape[0]-1))
+            o3d.io.write_point_cloud(os.path.join(args.root_path_pcds,str(names[i])+ "_" + str(4096) + "_GT.ply"), filtered_pcd)
 
 
 

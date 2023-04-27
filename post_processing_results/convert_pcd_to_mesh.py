@@ -21,13 +21,13 @@ def convert_pcd_to_mesh_meshlab(pcd_path):
     ms.meshing_remove_unreferenced_vertices()
     ms.save_current_mesh(pcd_path.replace(".ply",".obj"))
 
-def convert_all_pcds_from_one_folder(path_folder,visualize):
+def convert_all_pcds_from_one_folder(path_folder):
     # gather all of the pointclouds in the folder, transform each one into a mesh and save the result
     pcd_paths = sorted(glob.glob(os.path.join(path_folder, "*.ply"), recursive=True))
 
     for pcd_path in pcd_paths:
         print("Converting: " + pcd_path)
-        convert_pcd_to_mesh_meshlab(pcd_path, args.visualize)
+        convert_pcd_to_mesh_meshlab(pcd_path)
 
 if __name__ == "__main__":
     arg_parser = argparse.ArgumentParser(description="Convert a point cloud to a mesh")
@@ -39,15 +39,9 @@ if __name__ == "__main__":
         help="Root path of the pointclouds folders"
     )
 
-    arg_parser.add_argument(
-        "--visualize",
-        action="store_true",
-        help="Visualize the resulting mesh"
-    )
-
     args = arg_parser.parse_args()
 
-    convert_all_pcds_from_one_folder(args.root_path_pcds,args.visualize)
+    convert_all_pcds_from_one_folder(args.root_path_pcds)
 
     """
     path = "/home/miruna20/Desktop/pointcloud500.ply"
