@@ -1,0 +1,12 @@
+DEBUG:root:0/3960
+DEBUG:root:Processing sub-verse500_verLev20 deformation: 0 and shift: 0
+DEBUG:root:Processing: /home/miruna20/Documents/Thesis/Dataset/VerSe2020/vertebrae/01_training/sub-verse500_verLev20/sub-verse500_verLev20_forces0_deformed_centered_20_0_scaled.obj
+DEBUG:root:Path to partial pcd /home/miruna20/Documents/Thesis/Dataset/VerSe2020/vertebrae/01_training/sub-verse500_verLev20/shifts/shiftx0.05_shifty-0.01/sub-verse500_verLev20_forces0_deformed_centered_20_0_scaled.pcd
+DEBUG:root:Initial number of points in pcd:21419
+DEBUG:root:Visualizing input and ground truth after scaling and centering
+DEBUG:root:(21419, 3)
+DEBUG:root:1/3960
+DEBUG:root:Processing sub-verse500_verLev20 deformation: 1 and shift: 0
+DEBUG:root:Processing: /home/miruna20/Documents/Thesis/Dataset/VerSe2020/vertebrae/01_training/sub-verse500_verLev20/sub-verse500_verLev20_forces1_deformed_centered_20_0_scaled.obj
+DEBUG:root:Path to partial pcd /home/miruna20/Documents/Thesis/Dataset/VerSe2020/vertebrae/01_training/sub-verse500_verLev20/shifts/shiftx0.05_shifty-0.01/sub-verse500_verLev20_forces1_deformed_centered_20_0_scaled.pcd
+DEBUG:root:Initial number of points in pcd:37506

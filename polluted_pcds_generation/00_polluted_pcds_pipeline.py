@@ -175,8 +175,8 @@ if __name__ == '__main__':
                         '--result_h5_file', result_h5_file,
                         '--nr_deform_per_sample', num_deform,
                         '--nr_points_per_point_cloud', nr_points_per_point_cloud,
-                        '--num_shifts', num_shifts
-                        #'--visualize_vertebrae'
+                        '--num_shifts', num_shifts,
+                        '--visualize_vertebrae'
                         ])
 
 

@@ -14,7 +14,7 @@ if __name__ == "__main__":
     # lumbar vertebrae from verse2020 training samples
     # inputs_inference = "/home/miruna20/Documents/Thesis/Dataset/VerSe2020/vertebrae_train_lumbar.h5"
     # results_inference_path = "/home/miruna20/Documents/Thesis/Code/VRCNet/lumbar_vertebrae_verse2020_dataset/training_dataset/results.h5"
-    #nr_partial_pcds_per_sample = 16
+    # nr_partial_pcds_per_sample = 16
 
     arg_parser = argparse.ArgumentParser(description="Visualize the input dataset and the predicted completions")
     arg_parser.add_argument(
@@ -48,6 +48,7 @@ if __name__ == "__main__":
     )
 
     args = arg_parser.parse_args()
+    maria = False
 
     # read input dataset
     inputs_inference = h5py.File(args.path_input_dataset, 'r')
@@ -56,7 +57,8 @@ if __name__ == "__main__":
     incomplete_pcds = np.array(inputs_inference['incomplete_pcds'][()])
     labels = np.array(inputs_inference['labels'][()])
     number_samples_per_class = np.array(inputs_inference['number_per_class'])
-    datasets_ids = np.array(inputs_inference['datasets_ids'])
+    if (not maria):
+        datasets_ids = np.array(inputs_inference['datasets_ids'])
 
     print("Shape of complete pcds: " + str(complete_pcds.shape))
     print("Shape of incomplete pcds: " + str(incomplete_pcds.shape))
@@ -65,7 +67,7 @@ if __name__ == "__main__":
     # if results are available also read the results dataset
     emd_flag = False
     create_input_out_of_results = False
-    if(args.path_result_dataset != None):
+    if (args.path_result_dataset != None):
         results = h5py.File(args.path_result_dataset, 'r')
 
         results_array = np.array(results['results'][()])
@@ -81,21 +83,22 @@ if __name__ == "__main__":
         cd_p = np.array(results['cd_p'][()])
         f1 = np.array(results['f1'][()])
 
-        if(emd_flag):
+        if (emd_flag):
             print("Average emd: " + str(np.average(emd) * 10000))
         print("Average cd_t: " + str(np.average(cd_t) * 10000))
         print("Average cd_p: " + str(np.average(cd_p) * 10000))
         print("Average f1: " + str(np.average(f1)))
 
-        if(create_input_out_of_results):
+        if (create_input_out_of_results):
             # create new dataset from result dataset
-            new_dataset = h5py.File(args.path_result_dataset.replace("results","inputs"), "w")
+            new_dataset = h5py.File(args.path_result_dataset.replace("results", "inputs"), "w")
             dset_completepcds = new_dataset.create_dataset("complete_pcds", data=results_array)
             dset_labels = new_dataset.create_dataset("labels", data=labels)
             dset_number_per_class = new_dataset.create_dataset("number_per_class", data=number_samples_per_class)
-            datasets_ids = new_dataset.create_dataset("dataset_ids",data=datasets_ids)
+            datasets_ids = new_dataset.create_dataset("dataset_ids", data=datasets_ids)
 
-    for i in range(0, incomplete_pcds.shape[0]):
+    step = 1
+    for i in range(0, incomplete_pcds.shape[0], step):
 
         # from the input dataset
         pc_partial = o3d.geometry.PointCloud()
@@ -103,7 +106,7 @@ if __name__ == "__main__":
 
         pc_gt = o3d.geometry.PointCloud()
         pc_gt.points = o3d.utility.Vector3dVector(complete_pcds[math.floor(i / int(args.nr_partial_pcds_per_sample))])
-
+        pc_gt.random_down_sample(4096 / (np.asarray(pc_gt.points).shape[0] - 1))
 
         # from the results
         if (args.path_result_dataset != None):
@@ -122,9 +125,17 @@ if __name__ == "__main__":
         coord_sys = o3d.geometry.TriangleMesh.create_coordinate_frame()
 
         if (args.path_result_dataset != None):
-            print("Visualizing: " + str(datasets_ids[i]) + " red: partial pcd, blue: gt pcd, green: completed pcd")
-            pc_result.paint_uniform_color([0, 1, 0])
-            o3d.visualization.draw_geometries([pc_result,pc_partial,pc_gt])
+            if (maria):
+                #o3d.visualization.draw_geometries([pc_partial])
+                #o3d.visualization.draw_geometries([pc_result])
+                o3d.visualization.draw_geometries([pc_result,pc_partial])
+            else:
+                print("Visualizing: " + str(datasets_ids[i]) + " red: partial pcd, blue: gt pcd, green: completed pcd")
+                pc_result.paint_uniform_color([0, 1, 0])
+                #o3d.visualization.draw_geometries([pc_result, pc_partial, pc_gt])
+                o3d.visualization.draw_geometries([pc_partial])
+                #o3d.visualization.draw_geometries([pc_result,  pc_gt])
+                #o3d.visualization.draw_geometries([pc_result])
         else:
             print("Visualizing: " + str(datasets_ids[i]) + " red: partial pcd, blue: complete pcd")
-            o3d.visualization.draw_geometries([pc_partial,pc_gt])
+            o3d.visualization.draw_geometries([pc_partial, pc_gt])
