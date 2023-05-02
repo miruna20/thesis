@@ -1,0 +1,23 @@
+DEBUG:root:0/5
+DEBUG:root:Processing sub-verse835_verLev20 and shift: 0
+DEBUG:root:Processing: /home/miruna20/Documents/Thesis/Dataset/VerSe2020/vertebrae/01_training_duplicate/sub-verse835_verLev20/sub-verse835_verLev20_msh_centered_scaled.obj
+DEBUG:root:Path to partial pcd /home/miruna20/Documents/Thesis/Dataset/VerSe2020/vertebrae/01_training_duplicate/sub-verse835_verLev20/shifts/shiftx0.05_shifty-0.01/sub-verse835_verLev20_msh_centered_scaled.pcd
+DEBUG:root:Initial number of points in pcd:60320
+DEBUG:root:(10000, 3)
+DEBUG:root:1/5
+DEBUG:root:Processing sub-verse835_verLev21 and shift: 0
+DEBUG:root:Processing: /home/miruna20/Documents/Thesis/Dataset/VerSe2020/vertebrae/01_training_duplicate/sub-verse835_verLev21/sub-verse835_verLev21_msh_centered_scaled.obj
+DEBUG:root:Path to partial pcd /home/miruna20/Documents/Thesis/Dataset/VerSe2020/vertebrae/01_training_duplicate/sub-verse835_verLev21/shifts/shiftx0.05_shifty-0.01/sub-verse835_verLev21_msh_centered_scaled.pcd
+DEBUG:root:Initial number of points in pcd:73861
+DEBUG:root:(10000, 3)
+DEBUG:root:2/5
+DEBUG:root:Processing sub-verse835_verLev22 and shift: 0
+DEBUG:root:Processing: /home/miruna20/Documents/Thesis/Dataset/VerSe2020/vertebrae/01_training_duplicate/sub-verse835_verLev22/sub-verse835_verLev22_msh_centered_scaled.obj
+DEBUG:root:Path to partial pcd /home/miruna20/Documents/Thesis/Dataset/VerSe2020/vertebrae/01_training_duplicate/sub-verse835_verLev22/shifts/shiftx0.05_shifty-0.01/sub-verse835_verLev22_msh_centered_scaled.pcd
+DEBUG:root:Initial number of points in pcd:60395
+DEBUG:root:(10000, 3)
+DEBUG:root:3/5
+DEBUG:root:Processing sub-verse835_verLev23 and shift: 0
+DEBUG:root:Processing: /home/miruna20/Documents/Thesis/Dataset/VerSe2020/vertebrae/01_training_duplicate/sub-verse835_verLev23/sub-verse835_verLev23_msh_centered_scaled.obj
+DEBUG:root:Path to partial pcd /home/miruna20/Documents/Thesis/Dataset/VerSe2020/vertebrae/01_training_duplicate/sub-verse835_verLev23/shifts/shiftx0.05_shifty-0.01/sub-verse835_verLev23_msh_centered_scaled.pcd
+DEBUG:root:Initial number of points in pcd:43027
