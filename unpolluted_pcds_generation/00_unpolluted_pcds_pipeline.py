@@ -172,7 +172,7 @@ if __name__ == '__main__':
                         '--num_shifts',num_shifts
                         ])
 
-        subprocess.run(['python', 'create_dataset_for_shape_completion.py',
+        subprocess.run(['python', '07_create_dataset_for_shape_completion.py',
                         '--vertebrae_list', list_paths_vertebrae,
                         '--root_path_vertebrae', root_paths_vertebrae,
                         '--result_h5_file', result_h5_file,

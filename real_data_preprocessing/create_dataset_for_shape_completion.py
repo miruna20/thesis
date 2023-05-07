@@ -7,6 +7,7 @@ import math
 from collections import Counter
 import argparse
 from utils import namings
+import fps
 
 def processOneVertebra(pathCompleteVertebra, pathToPartialPCD, nrPointsProPartialPC=2048,
                        nrPointsProCompletePC=4096,
@@ -44,11 +45,12 @@ def processOneVertebra(pathCompleteVertebra, pathToPartialPCD, nrPointsProPartia
     # if it has at least half of the nrPointsProPartialPC duplicate the number of points then resample
     nr_points_in_partial_pcd = np.asarray(partial_pcd.points).shape[0]
     print("Initial number of points in pcd:" + str(nr_points_in_partial_pcd))
-    if(nr_points_in_partial_pcd >= nrPointsProPartialPC):
-        sampled_partial_pcd = partial_pcd.random_down_sample(nrPointsProPartialPC/(nr_points_in_partial_pcd-1))
-
+    if (nr_points_in_partial_pcd >= nrPointsProPartialPC):
+        sampled_partial_pcd = fps.fps_points(np.asarray(partial_pcd.points), num_samples=nrPointsProPartialPC)
+        print("Number of points after sampling: " + str(sampled_partial_pcd.shape[0]))
     else:
-        print("PCD with less than " + str(nrPointsProPartialPC) + "points" + str(os.path.basename(pathToPartialPCD)))
+        print(
+            "PCD with less than " + str(nrPointsProPartialPC) + "points" + str(os.path.basename(pathToPartialPCD)))
         return 0, []
 
     if (visualize):
@@ -60,7 +62,7 @@ def processOneVertebra(pathCompleteVertebra, pathToPartialPCD, nrPointsProPartia
         o3d.visualization.draw([partial_pcd,coord_sys,pointCloudComplete])
 
     partial_pcds = []
-    partial_pcds.append(np.asarray(sampled_partial_pcd.points))
+    partial_pcds.append(np.asarray(sampled_partial_pcd))
     return np.asarray(pointCloudComplete.points), partial_pcds
 
 
@@ -87,7 +89,7 @@ def saveToH5(fileName, stackedCropped, stackedComplete, labels,datasets_ids, nrS
     vertebrae_file = h5py.File(fileName, "w")
     dset_incompletepcds = vertebrae_file.create_dataset("incomplete_pcds", data=stackedCropped)
     dset_completepcds = vertebrae_file.create_dataset("complete_pcds", data=stackedComplete)
-    dset_labels = vertebrae_file.create_dataset("labels", data=labels)
+    dset_labels = vertebrae_file.create_dataset("labels", data=[0,1,2])
     dset_ids = vertebrae_file.create_dataset("datasets_ids", data=datasets_ids)
     number_per_class = computeNrPerClass(labels, nrSamplesPerClass)
     dset_number_per_class = vertebrae_file.create_dataset("number_per_class", data=number_per_class)
