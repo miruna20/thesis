@@ -55,6 +55,21 @@ def create_list_init_shifted_merged_deformed_for_raycasting(spines_root, list_sp
                 if (os.path.isfile(merged_spine_negx)):
                     list.write(merged_spine_negx + "\n")
 
+def create_list_init_deformed_for_raycasting(spines_root, list_spines, num_deform, save_to):
+    list = open(save_to, "w")
+
+    with open(list_spines) as file:
+        spines_list = file.read().splitlines()
+
+    for spine in spines_list:
+        folder_name = spine.split("_")[0]
+
+        for deform in range(int(num_deform)):
+            curr_lumbar_mesh_name = namings.get_name_spine_lumbar_mesh_deformed_scaled_centered(spine, deform)
+            init_spine = os.path.join(spines_root, folder_name, curr_lumbar_mesh_name)
+            if (os.path.isfile(init_spine)):
+                list.write(init_spine + "\n")
+
 def create_list_init_shifted_merged_for_raycasting(spines_root, list_spines, num_shifts, save_to):
     list = open(save_to, "w")
 
