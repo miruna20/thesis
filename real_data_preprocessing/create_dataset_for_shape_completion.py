@@ -9,7 +9,40 @@ import argparse
 from utils import namings
 import fps
 
-def processOneVertebra(pathCompleteVertebra, pathToPartialPCD, nrPointsProPartialPC=2048,
+def align_real_to_synthetic(pathToPartialPCD,synthetic_template_directory):
+    """
+    Align the real input point cloud with a synthetic template of the same level
+    """
+    # read
+    real = o3d.io.read_point_cloud(pathToPartialPCD)
+
+    # align the real input point cloud with the synthetic template
+    # determine which vertebral level
+    level = os.path.basename(pathToPartialPCD).split("_")[2].split(".")[0]
+
+    # load the corresponding synthetic template of the current level
+    synthetic_template_path = os.path.join(synthetic_template_directory, level, "template_" + level + ".pcd")
+    synthetic = o3d.io.read_point_cloud(synthetic_template_path)
+
+    # match the centers of the 2 point clouds
+    center_synthetic = np.asarray(synthetic.get_center())
+    center_real = np.asarray(real.get_center())
+    translation = center_synthetic - center_real
+    real.translate(translation)
+
+    # run ICP on them so that we get an aligned real dataset
+    # Set the ICP convergence criteria
+    criteria = o3d.pipelines.registration.ICPConvergenceCriteria(relative_fitness=1e-6, relative_rmse=1e-6, max_iteration=200)
+
+    # Perform ICP registration
+    reg_result = o3d.pipelines.registration.registration_icp(real, synthetic, 0.1, np.identity(4),
+                                                   o3d.pipelines.registration.TransformationEstimationPointToPoint(),
+                                                             criteria)
+    real.transform(reg_result.transformation)
+
+    return real,synthetic
+
+def processOneVertebra(pathCompleteVertebra, pathToPartialPCD,synthetic_template_directory, nrPointsProPartialPC=2048,
                        nrPointsProCompletePC=4096,
                        visualize=False):
     """
@@ -27,22 +60,16 @@ def processOneVertebra(pathCompleteVertebra, pathToPartialPCD, nrPointsProPartia
 
     # load complete vertebra and its partial point cloud
     completeVertebra = o3d.io.read_triangle_mesh(pathCompleteVertebra)
-    partial_pcd = o3d.io.read_point_cloud(pathToPartialPCD)
-    print("Path to partial pcd " + str(pathToPartialPCD))
+    partial_pcd,synthetic = align_real_to_synthetic(pathToPartialPCD,synthetic_template_directory)
 
-    # move the pcd and the vert to the center
+    # move only the vertebra mesh to the center
     center_vertebra = completeVertebra.get_center()
     completeVertebra.vertices = o3d.utility.Vector3dVector(completeVertebra.vertices - center_vertebra)
-    partial_pcd.points = o3d.utility.Vector3dVector(partial_pcd.points - center_vertebra)
+
 
     # sample complete vertebra with the poisson disk sampling technique
     pointCloudComplete = o3d.geometry.TriangleMesh.sample_points_poisson_disk(completeVertebra, nrPointsProCompletePC)
 
-    # sample partial point cloud Farthest Point Sample
-
-    # check if partial_pcd has >= nrPointsProPartialPC points
-    # if yes then sample this number directly
-    # if it has at least half of the nrPointsProPartialPC duplicate the number of points then resample
     nr_points_in_partial_pcd = np.asarray(partial_pcd.points).shape[0]
     print("Initial number of points in pcd:" + str(nr_points_in_partial_pcd))
     if (nr_points_in_partial_pcd >= nrPointsProPartialPC):
@@ -57,9 +84,18 @@ def processOneVertebra(pathCompleteVertebra, pathToPartialPCD, nrPointsProPartia
         coord_sys = o3d.geometry.TriangleMesh.create_coordinate_frame()
 
         print("Visualizing input and ground truth after scaling and centering")
-        pointCloudComplete.paint_uniform_color([0,1,0])
-        partial_pcd.paint_uniform_color([0,0,1])
-        o3d.visualization.draw([partial_pcd,coord_sys,pointCloudComplete])
+        pointCloudComplete.paint_uniform_color([0, 1, 0])
+        partial_pcd.paint_uniform_color([0, 0, 1])
+        synthetic.paint_uniform_color([0,1,0])
+        #o3d.visualization.draw([partial_pcd, coord_sys, pointCloudComplete])
+        o3d.visualization.draw([partial_pcd, coord_sys, synthetic])
+
+    # save point cloud and mesh as sanity check
+    save_to = pathToPartialPCD.split(".")[0]
+    o3d.io.write_point_cloud(save_to + "_aligned_to_synthetic.pcd", partial_pcd)
+
+    save_mesh_to = pathCompleteVertebra.split(".")[0]
+    o3d.io.write_triangle_mesh(save_mesh_to + "_centered.obj", completeVertebra)
 
     partial_pcds = []
     partial_pcds.append(np.asarray(sampled_partial_pcd))
@@ -84,7 +120,7 @@ def computeNrPerClass(labels, nrSamplesPerClass=16):
     return np.asarray(nr_samples_per_class_as_list)
 
 
-def saveToH5(fileName, stackedCropped, stackedComplete, labels,datasets_ids, nrSamplesPerClass=16):
+def saveToH5(fileName, stackedCropped, stackedComplete, labels, datasets_ids, nrSamplesPerClass=16):
     # save the dataset in a .h5 file for VRCNet
     vertebrae_file = h5py.File(fileName, "w")
     dset_incompletepcds = vertebrae_file.create_dataset("incomplete_pcds", data=stackedCropped)
@@ -96,7 +132,8 @@ def saveToH5(fileName, stackedCropped, stackedComplete, labels,datasets_ids, nrS
     print("Number_per_class" + str(number_per_class))
 
 
-def processAllVertebrae(list_path, rootDirectoryVertebrae, saveTo, visualize=False, nrPointsProPartialPC=2048, nrPointsProCompletePC=4096):
+def processAllVertebrae(list_path, rootDirectoryVertebrae, saveTo, synthetic_template_directory,visualize=False, nrPointsProPartialPC=2048,
+                        nrPointsProCompletePC=4096):
     # prepare lists for storing all vertebrae
     labels = []
     complete_pcds_all_vertebrae = []
@@ -122,15 +159,16 @@ def processAllVertebrae(list_path, rootDirectoryVertebrae, saveTo, visualize=Fal
 
         # get the name of the pcd and the name of the mesh
         pcd_path = os.path.join(rootDirectoryVertebrae, vert_folder_name, vert_folder_name + ".pcd")
-        vert_mesh_path = os.path.join(rootDirectoryVertebrae, vert_folder_name, vert_folder_name + "_msh_centered_scaled.obj")
+        vert_mesh_path = os.path.join(rootDirectoryVertebrae, vert_folder_name,
+                                      vert_folder_name + "_msh_centered_scaled.obj")
 
         #  process each vertebra individually
         complete_pcd, partial_pcds = processOneVertebra(pathCompleteVertebra=vert_mesh_path,
                                                         pathToPartialPCD=pcd_path,
+                                                        synthetic_template_directory=synthetic_template_directory,
                                                         visualize=visualize,
                                                         nrPointsProPartialPC=nrPointsProPartialPC,
                                                         nrPointsProCompletePC=nrPointsProCompletePC)
-
 
         # if the partial point cloud has less than nrPointsProPartialPC then partial_pcds will be an empty list
         if len(partial_pcds) == 0:
@@ -150,7 +188,7 @@ def processAllVertebrae(list_path, rootDirectoryVertebrae, saveTo, visualize=Fal
     # stack the results
     stacked_partial_pcds = np.stack(partial_pcds_all_vertebrae, axis=0)
     stacked_complete_pcds = np.stack(complete_pcds_all_vertebrae, axis=0)
-    stacked_dataset_ids = np.stack(dataset_ids,axis=0)
+    stacked_dataset_ids = np.stack(dataset_ids, axis=0)
     labels_array = np.asarray(labels)
 
     # for debugging print the shape
@@ -159,11 +197,10 @@ def processAllVertebrae(list_path, rootDirectoryVertebrae, saveTo, visualize=Fal
     print("Shape of labels" + str(labels_array.shape))
 
     saveToH5(saveTo, stackedCropped=stacked_partial_pcds, stackedComplete=stacked_complete_pcds,
-             labels=labels_array, datasets_ids=stacked_dataset_ids,  nrSamplesPerClass=1)
+             labels=labels_array, datasets_ids=stacked_dataset_ids, nrSamplesPerClass=1)
 
 
 if __name__ == "__main__":
-
     arg_parser = argparse.ArgumentParser(description="Create a dataset for completion training")
     arg_parser.add_argument(
         "--vertebrae_list",
@@ -176,6 +213,13 @@ if __name__ == "__main__":
         required=True,
         dest="folder_complete_meshes",
         help="Root path of the vertebrae folders"
+
+    )
+    arg_parser.add_argument(
+        "--synthetic_template_directory",
+        required=True,
+        dest="synthetic_template_directory",
+        help="Root path to folders that contain synthetic templates for each vertebral level"
 
     )
     arg_parser.add_argument(
@@ -202,11 +246,11 @@ if __name__ == "__main__":
     args = arg_parser.parse_args()
     print("Creating the shape completion dataset from partial point clouds obtained from US")
 
-
     # process all vertebrae
     processAllVertebrae(list_path=args.vertebrae_list,
                         rootDirectoryVertebrae=args.folder_complete_meshes,
                         saveTo=args.result_h5_file,
+                        synthetic_template_directory=args.synthetic_template_directory,
                         visualize=args.visualize_vertebrae,
                         nrPointsProPartialPC=int(args.nr_points_per_point_cloud),
                         nrPointsProCompletePC=int(args.nr_points_per_point_cloud)
