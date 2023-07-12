@@ -87,8 +87,8 @@ def processOneVertebra(pathCompleteVertebra, pathToPartialPCD,synthetic_template
         pointCloudComplete.paint_uniform_color([0, 1, 0])
         partial_pcd.paint_uniform_color([0, 0, 1])
         synthetic.paint_uniform_color([0,1,0])
-        #o3d.visualization.draw([partial_pcd, coord_sys, pointCloudComplete])
-        o3d.visualization.draw([partial_pcd, coord_sys, synthetic])
+        o3d.visualization.draw([partial_pcd, coord_sys, pointCloudComplete])
+        #o3d.visualization.draw([partial_pcd, coord_sys, synthetic])
 
     # save point cloud and mesh as sanity check
     save_to = pathToPartialPCD.split(".")[0]
@@ -125,7 +125,7 @@ def saveToH5(fileName, stackedCropped, stackedComplete, labels, datasets_ids, nr
     vertebrae_file = h5py.File(fileName, "w")
     dset_incompletepcds = vertebrae_file.create_dataset("incomplete_pcds", data=stackedCropped)
     dset_completepcds = vertebrae_file.create_dataset("complete_pcds", data=stackedComplete)
-    dset_labels = vertebrae_file.create_dataset("labels", data=[0,1,2])
+    dset_labels = vertebrae_file.create_dataset("labels", data=labels)
     dset_ids = vertebrae_file.create_dataset("datasets_ids", data=datasets_ids)
     number_per_class = computeNrPerClass(labels, nrSamplesPerClass)
     dset_number_per_class = vertebrae_file.create_dataset("number_per_class", data=number_per_class)
