@@ -4,29 +4,30 @@ import open3d as o3d
 import os
 import argparse
 
+def get_filtered_pcd_from_numpy(np_array):
+    # create empty point cloud
+    pcd = o3d.geometry.PointCloud()
+    # add points to the point cloud
+    pcd.points = o3d.utility.Vector3dVector(np_array)
+    filtered_np_array, _ = pcd.remove_radius_outlier(4, 0.03)
+    return filtered_np_array
+
 if __name__ == "__main__":
 
     arg_parser = argparse.ArgumentParser(description="Extract point clouds from h5 dataset")
 
     arg_parser.add_argument(
-        "--path_dataset",
+        "--results_dataset",
         required=False,
-        dest="path_dataset",
-        help="Path to the dataset"
+        dest="results_dataset",
+        help="Path to the results dataset obtained from inference"
     )
 
     arg_parser.add_argument(
-        "--path_dataset_with_names",
+        "--inputs_dataset",
         required=False,
-        dest="path_dataset_with_names",
-        help="Path to the dataset that contains a dataset_ids vector so that we have the names"
-    )
-
-    arg_parser.add_argument(
-        "--dataset_entry",
-        required=False,
-        dest="dataset_entry",
-        help="The entry of the dataset that we want to transform to point clouds"
+        dest="inputs_dataset",
+        help="Path to the inference dataset"
     )
 
     arg_parser.add_argument(
@@ -35,42 +36,52 @@ if __name__ == "__main__":
         dest="root_path_pcds",
         help="Path where the resulting point clouds will be saved "
     )
+    arg_parser.add_argument(
+        "--visualize",
+        action="store_true",
+        help="Visualize point clouds "
+    )
     args = arg_parser.parse_args()
 
-    nr_pcds = 11
+    nr_pcds = 100
 
-    dataset = h5py.File(args.path_dataset, 'r')
-    dataset_with_names = h5py.File(args.path_dataset_with_names, 'r')
+    # read the h5 files of the datasets
+    results_dataset = h5py.File(args.results_dataset, 'r')
+    inputs_dataset = h5py.File(args.inputs_dataset, 'r')
 
-    pcds = np.array(dataset[args.dataset_entry][()])
-    #nr_pcds = pcds.shape[0]
-    names = np.array(dataset_with_names['datasets_ids'])
+    # get the numpy arrays
+    inputs = np.array(inputs_dataset['incomplete_pcds'])
+    names = np.array(inputs_dataset['datasets_ids'])
+    results = np.array(results_dataset["results"][()])
+    gts = np.array(results_dataset["gt"][()])
+
     if(len(names) == 0):
         names = []
         for idx in range(nr_pcds):
             names.append(str(idx))
 
     os.makedirs(args.root_path_pcds, exist_ok=True)
-    for i in range(nr_pcds):
-        # get corresponding points from current point cloud as np array
-        pcd = pcds[i]
 
-        # create empty point cloud
-        o3d_pcd = o3d.geometry.PointCloud()
+    if(results.shape[0]<5):
+        nr_pcds = results.shape[0]
 
-        # add points to the point cloud
-        o3d_pcd.points = o3d.utility.Vector3dVector(pcd)
-        filtered_pcd, _ = o3d_pcd.remove_radius_outlier(4, 0.03)
+    for i in range(0, nr_pcds):
+
+        filtered_input = get_filtered_pcd_from_numpy(inputs[i])
+        filtered_gt = get_filtered_pcd_from_numpy(gts[i])
+        filtered_result = get_filtered_pcd_from_numpy(results[i])
+
+        if(args.visualize):
+            filtered_input.paint_uniform_color([1, 0, 0])
+            filtered_gt.paint_uniform_color([0, 1, 0])
+            filtered_result.paint_uniform_color([0, 0, 1])
+
+            o3d.visualization.draw_geometries([filtered_input,filtered_gt,filtered_result])
 
         # save point cloud
-        if('results' in args.path_dataset):
-            o3d.io.write_point_cloud(os.path.join(args.root_path_pcds,str(names[i]) + "_" + str(pcds.shape[1]) + "_reconstruction.ply"), filtered_pcd)
-        else:
-            # downsample before saving
-            nr_points_to_downsample_to = 4096
-            if(np.asarray(filtered_pcd.points).shape[0]-1 > nr_points_to_downsample_to):
-                filtered_pcd = filtered_pcd.random_down_sample(4096/(np.asarray(filtered_pcd.points).shape[0]-1))
-            o3d.io.write_point_cloud(os.path.join(args.root_path_pcds,str(names[i])+ "_" + str(4096) + "_GT.ply"), filtered_pcd)
+        o3d.io.write_point_cloud(os.path.join(args.root_path_pcds,str(names[i]) + "_" + str(inputs[i].shape[1]) + "_input.ply"), filtered_input)
+        o3d.io.write_point_cloud(os.path.join(args.root_path_pcds,str(names[i])+ "_" + str(gts[i].shape[1]) + "_GT.ply"), filtered_gt)
+        o3d.io.write_point_cloud(os.path.join(args.root_path_pcds,str(names[i]) + "_" + str(results[i].shape[1]) + "_reconstruction.ply"), filtered_result)
 
 
 
