@@ -8,8 +8,44 @@ from collections import Counter
 import argparse
 from utils import namings
 import fps
-import logging 
+import logging
+import re
+import time
 
+def align_real_to_synthetic(real_pcd,synthetic_pcd):
+    """
+    Align the real input point cloud with a synthetic template of the same level
+    """
+
+    # match the centers of the 2 point clouds
+    center_synthetic = np.asarray(synthetic_pcd.get_center())
+    center_real = np.asarray(real_pcd.get_center())
+    translation = center_synthetic - center_real
+    real_pcd.translate(translation)
+
+    # run ICP on them so that we get an aligned real dataset
+    # Set the ICP convergence criteria
+    criteria = o3d.pipelines.registration.ICPConvergenceCriteria(relative_fitness=1e-6, relative_rmse=1e-6, max_iteration=200)
+
+    # Perform ICP registration
+    reg_result = o3d.pipelines.registration.registration_icp(real_pcd, synthetic_pcd, 0.1, np.identity(4),
+                                                   o3d.pipelines.registration.TransformationEstimationPointToPoint(),
+                                                             criteria)
+    #o3d.io.write_point_cloud("/home/miruna20/Documents/PhD/PatientDataPreprocessing/Data/preProc_testing/real_pcd.pcd", real_pcd)
+
+    real_pcd.transform(reg_result.transformation)
+
+    return real_pcd,synthetic_pcd,translation,reg_result.transformation
+
+def complete_vert_fits_into_unit_sphere(completeVertebra):
+    bb_complete_vert = completeVertebra.get_axis_aligned_bounding_box()
+    length_x = bb_complete_vert.get_max_bound()[0] - bb_complete_vert.get_min_bound()[0]
+    length_y = bb_complete_vert.get_max_bound()[1] - bb_complete_vert.get_min_bound()[1]
+    length_z = bb_complete_vert.get_max_bound()[2] - bb_complete_vert.get_min_bound()[2]
+
+    if(length_x < 1 and length_y < 1 and length_z < 1):
+        return True
+    return False
 
 def processOneVertebra(pathCompleteVertebra, pathToPartialPCD, nrPointsProPartialPC=2048,
                        nrPointsProCompletePC=4096,
@@ -49,9 +85,63 @@ def processOneVertebra(pathCompleteVertebra, pathToPartialPCD, nrPointsProPartia
     """
 
     # move the pcd and the vert to the center
-    center_vertebra = completeVertebra.get_center()
-    completeVertebra.vertices = o3d.utility.Vector3dVector(completeVertebra.vertices - center_vertebra)
-    partial_pcd.points = o3d.utility.Vector3dVector(partial_pcd.points - center_vertebra)
+    #center_vertebra = completeVertebra.get_center()
+    #completeVertebra.vertices = o3d.utility.Vector3dVector(completeVertebra.vertices - center_vertebra)
+    #partial_pcd.points = o3d.utility.Vector3dVector(partial_pcd.points - center_vertebra)
+
+    # do the scaling
+    # first scale everything back up with a scale factor of 100
+    completeVertebra.scale(100,center=np.asarray([0,0,0]))
+    partial_pcd.scale(100,center=np.asarray([0,0,0]))
+
+    # debugging check after the upscaling
+    #o3d.io.write_triangle_mesh(pathCompleteVertebra.replace(".obj", "_scaledUP.obj"), completeVertebra)
+    #o3d.io.write_point_cloud(pathToPartialPCD.replace(".pcd", "_scaledUP.pcd"), partial_pcd)
+
+
+    # then scale back to the unit sphere relative to the initial size
+    # find out what the correct unit sphere size is (1?)
+    unit_sphere_size = 1
+    bb_partial_pcd = partial_pcd.get_axis_aligned_bounding_box()
+
+    # we know that the length between the two transverse processes will be along the x axis
+    length_partial_pcd = bb_partial_pcd.get_max_bound()[0] - bb_partial_pcd.get_min_bound()[0]
+
+    # + 20 here is just a padding to ensure that the full shape of the vertebra
+    # will fit in the unit sphere (which it won't without padding if the axis from arch to vert body
+    # is longer than the one in between transverse process
+    scaling_factor = unit_sphere_size/(length_partial_pcd+30)
+
+    completeVertebra.scale(scaling_factor, center=np.asarray([0, 0, 0]))
+
+    #do not add vertebrae with GT larger than unit sphere
+    if not complete_vert_fits_into_unit_sphere(completeVertebra):
+        logging.debug("DOES NOT FIT INTO UNIT SPHERE")
+        return [],[]
+
+
+    partial_pcd.scale(scaling_factor, center=np.asarray([0, 0, 0]))
+
+    # debugging check after the scaling relative to the unit sphere
+
+    # find vert level
+    match = re.search(r'verLev(\d+)', pathToPartialPCD)
+    number = match.group(1)
+
+    synth_template_path = os.path.join("synthetic_templates", "synthTempl_verLev" + number + ".pcd")
+    synthetic_pcd = o3d.io.read_point_cloud(synth_template_path)
+
+    partial_pcd, synthetic_pcd,transl,ICP_trafo = align_real_to_synthetic(partial_pcd,synthetic_pcd)
+    # apply the same trafo on the vertebra
+    completeVertebra.translate(transl)
+    completeVertebra.transform(ICP_trafo)
+
+
+
+    #o3d.io.write_triangle_mesh(pathCompleteVertebra.replace(".obj", "_scaledrelativeUnitSphere.obj"), completeVertebra)
+    #o3d.io.write_point_cloud(pathToPartialPCD.replace(".pcd", "_scaledrelativeUnitSphere.pcd"), partial_pcd)
+    #print(pathCompleteVertebra)
+    #print(pathToPartialPCD)
 
     # sample complete vertebra with the poisson disk sampling technique
     pointCloudComplete = o3d.geometry.TriangleMesh.sample_points_poisson_disk(completeVertebra, nrPointsProCompletePC)
@@ -245,8 +335,10 @@ if __name__ == "__main__":
 
     args = arg_parser.parse_args()
     logging.debug("Creating the shape completion dataset from partial point clouds obtained from US")
+    timestr = time.strftime("%Y%m%d-%H%M%S")
 
-    logging.basicConfig(filename="create_dataset_logs.txt", filemode='w',level=logging.DEBUG, force=True)
+    logging.basicConfig(filename="create_dataset_logs" + timestr + ".txt", filemode='w', level=logging.DEBUG,
+                        force=True)
 
     # process all vertebrae
     processAllVertebrae(list_path=args.vertebrae_list,

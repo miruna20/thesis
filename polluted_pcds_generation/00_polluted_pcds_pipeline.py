@@ -103,7 +103,8 @@ if __name__ == '__main__':
     list_paths_vertebrae = os.path.join(root_paths_vertebrae, "list_vertebrae.txt")
     path_to_save_camera_poses_csv = os.path.join(root_paths_vertebrae, "camera_poses.csv")
 
-    result_h5_file = os.path.join(root_paths_vertebrae, "dataset.h5")
+    result_h5_file = os.path.join(root_paths_vertebrae, os.path.basename(list_spines) + "_dataset.h5")
+    print("Result file: " + result_h5_file)
     path_blender_executable = "/home/miruna20/Documents/Thesis/Code/Preprocessing/blender-2.79-linux-glibc219-x86_64"
 
     if 'scale_down_mesh' in pipeline or 'all' in pipeline:
