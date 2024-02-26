@@ -69,7 +69,9 @@ if __name__ == "__main__":
         results_array = np.array(results['results'][()])
         if ('gt' in results.keys()):
             print("For this result dataset, the aligned GT is present")
-            complete_pcds = np.array(results['gt'][()])
+            #complete_pcds = np.array(results['gt'][()])
+
+
 
         if('input_aligned' in results.keys()):
             print("For this results dataset, the aligned input is present")
@@ -100,20 +102,8 @@ if __name__ == "__main__":
         print("Average f1: " + str(np.average(f1)))
         print("Average f1_arch: " + str(np.average(f1_arch)))
 
-    #idx = np.argpartition(cd_t, 15)
-    # step = 16
     step = 1
     for i in range(0, incomplete_pcds.shape[0], step):
-    #for i in idx:
-        #if "sub-verse502" not in str(datasets_ids[i]):
-        #    continue
-        #i=460
-        #i = np.argmax(cd_t)
-        # from the input dataset
-        #if i != 304:
-        #    continue
-        #if labels[i]!=4:
-        #    continue
 
         pc_partial = o3d.geometry.PointCloud()
         pc_partial.points = o3d.utility.Vector3dVector(incomplete_pcds[i])
@@ -130,10 +120,10 @@ if __name__ == "__main__":
                 print("emd_arch:"  + str(emd_arch[i] * factor))
             print("cd_t:" + str(cd_t[i] * factor))
             print("cd_t_arch:" + str(cd_t_arch[i] * factor))
-            print("cd_p:" + str(cd_p[i] * factor))
-            print("cd_p_arch:" + str(cd_p_arch[i] * factor))
+            #print("cd_p:" + str(cd_p[i] * factor))
+            #print("cd_p_arch:" + str(cd_p_arch[i] * factor))
             print("f1:" + str(f1[i]))
-            print("f1_arch:" + str(f1_arch[i]))
+            #print("f1_arch:" + str(f1_arch[i]))
 
             pc_result = o3d.geometry.PointCloud()
             pc_result.points = o3d.utility.Vector3dVector(results_array[i])
@@ -182,10 +172,14 @@ if __name__ == "__main__":
             #o3d.visualization.draw_geometries([pc_result])
             #o3d.visualization.draw_geometries([pc_gt])
             #o3d.visualization.draw_geometries([pc_partial])
-            #o3d.visualization.draw_geometries([pc_partial,pc_result,pc_gt])
-            o3d.visualization.draw_geometries([pc_partial,pc_result, pc_gt])
+            #o3d.visualization.draw_geometries([pc_result,pc_gt])
+            coord_sys = o3d.geometry.TriangleMesh.create_coordinate_frame()
+            o3d.visualization.draw_geometries([pc_partial,pc_gt,pc_result])
+            #o3d.visualization.draw_geometries([pc_result])
+            #o3d.visualization.draw_geometries([pc_gt,pc_result])
 
 
         else:
             print("Visualizing: " + str(datasets_ids[i]) + " red: partial pcd, blue: complete pcd")
+            #print(str(datasets_ids[i]))
             o3d.visualization.draw_geometries([pc_partial, pc_gt])

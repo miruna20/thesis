@@ -14,7 +14,7 @@ def find_file_in_folder_with_unique_identifier(folder,unique_identifier):
         return ""
     return files[0]
 
-def separate_spine_into_vertebrae(root_path_spines, spine_id, root_path_vertebrae):
+def separate_spine_into_vertebrae(root_path_spines, spine_id, root_path_vertebrae,generate2DLabelmap):
 
     # path of folder of the spine with spine_id
     path_spine = os.path.join(root_path_spines,spine_id)
@@ -51,16 +51,25 @@ def separate_spine_into_vertebrae(root_path_spines, spine_id, root_path_vertebra
                 print("This file has already been processed, the results can be found in: " + str(savePath))
                 continue
 
-            vertData = np.zeros([numpyData.shape[0], numpyData.shape[1], numpyData.shape[2]])
+            vertData_3D = np.zeros([numpyData.shape[0], numpyData.shape[1], numpyData.shape[2]])
 
             indices = np.transpose((numpyData == level).nonzero())
 
             for indic in indices:
-                vertData[indic[0],indic[1], indic[2]] = 1
+                vertData_3D[indic[0], indic[1], indic[2]] = 1
 
-            vertImage = nib.Nifti1Image(vertData,sample.affine,sample.header)
+            vertImage = nib.Nifti1Image(vertData_3D, sample.affine, sample.header)
 
             nib.save(vertImage,os.path.join(savePath, spine_segm_name_wo_ext + "_verLev" + str(level) + ".nii.gz"))
+
+            # Generate 2D labelmaps by taking the middle slice
+            if(generate2DLabelmap):
+                # create somehow 2D label from 3D labelmap, for now select the middle slice
+                # TODO think of better ways to create 2D label that simulates Xray label, maybe accumulation of values?
+                vertData_2D = vertData_3D[:,:,vertData_3D.shape[2]//2]
+                np.save(savePath, spine_segm_name_wo_ext + "_verLev" + str(level), vertData_2D)
+
+
     end = timer()
     print("process took: " + str(end-start) +  " seconds")
     sample.uncache()
@@ -93,6 +102,14 @@ if __name__ == '__main__':
         dest="root_path_spines",
         help="Root path to the spine folders."
     )
+    arg_parser.add_argument(
+        "--generate2DLabelmap",
+        required=False,
+        default=False,
+        dest="generate2DLabelmap",
+        help="Flag whether to generate 2d labelmap to be further used as aid to the completion network"
+
+    )
 
     print("Separate spine segmentation into segmentation of individual vertebrae")
 
@@ -109,7 +126,7 @@ if __name__ == '__main__':
         print("Separating spine: " + str(spine_id))
         try:
             separate_spine_into_vertebrae(root_path_spines=args.root_path_spines, spine_id=spine_id,
-                                           root_path_vertebrae=args.root_path_vertebrae)
+                                           root_path_vertebrae=args.root_path_vertebrae, generate2DLabelmap=args.generate2DLabelmap)
         except Exception as e:
             print("Error occured for:  " + str(spine_id) + str(e), file=sys.stderr)
 
