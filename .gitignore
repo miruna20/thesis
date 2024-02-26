@@ -2,4 +2,7 @@
 blender.log
 buffer.png
 *.obj
-utils/__pycache__
+create_dataset_logs*.txt
+boxplots.py
+experimental /*
+*__pycache__*
