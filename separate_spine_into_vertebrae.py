@@ -5,6 +5,20 @@ import numpy as np
 from timeit import default_timer as timer
 import sys
 import argparse
+from pathlib import Path
+from matplotlib import pyplot as plt
+from PIL import Image
+
+def generate_2D_labelmap(vert_segm_np_data, savePath, spine_segm_name_wo_ext, sample,level ):
+    print("Generating labelmap")
+    vertData_2D = np.sum(vert_segm_np_data,axis=0)
+    vertData_2D = vertData_2D[np.newaxis,:,:]
+    path_labelmap_2D = os.path.join(savePath, spine_segm_name_wo_ext + "_verLev" + str(level) + "2D_labelmap.nii.gz")
+
+    vert_image_2D = nib.Nifti1Image(vertData_2D, sample.affine)
+    nib.save(vert_image_2D, path_labelmap_2D)
+
+
 
 def find_file_in_folder_with_unique_identifier(folder,unique_identifier):
     files = glob.glob(os.path.join(folder,unique_identifier))
@@ -13,6 +27,7 @@ def find_file_in_folder_with_unique_identifier(folder,unique_identifier):
               file=sys.stderr)
         return ""
     return files[0]
+
 
 def separate_spine_into_vertebrae(root_path_spines, spine_id, root_path_vertebrae,generate2DLabelmap):
 
@@ -36,7 +51,6 @@ def separate_spine_into_vertebrae(root_path_spines, spine_id, root_path_vertebra
 
     # iterate over the labels in json file
     start = timer()
-    #for ind in range(1,len(data)):
     lumbar_levels = [20,21,22,23,24]
     for level in lumbar_levels:
         if(level in numpyData):
@@ -44,11 +58,15 @@ def separate_spine_into_vertebrae(root_path_spines, spine_id, root_path_vertebra
 
             # if the file already exists, skip
             savePath = os.path.join(root_path_vertebrae, spine_id + "_verLev" + str(level))
-            savePath = os.path.realpath(savePath)
-            if (not os.path.exists(savePath)):
+
+            path_segm_vert = os.path.join(savePath, spine_segm_name_wo_ext + "_verLev" + str(level) + ".nii.gz")
+            if (not os.path.exists(Path(savePath))):
                 os.mkdir(savePath)
-            elif (not (len(os.listdir(savePath)) == 0)):
+            elif (os.path.exists(Path(path_segm_vert))):
                 print("This file has already been processed, the results can be found in: " + str(savePath))
+                if (generate2DLabelmap):
+                    vert_segm_np_data = nib.load(path_segm_vert).get_fdata()
+                    generate_2D_labelmap(vert_segm_np_data,savePath,spine_segm_name_wo_ext,sample,level)
                 continue
 
             vertData_3D = np.zeros([numpyData.shape[0], numpyData.shape[1], numpyData.shape[2]])
@@ -60,15 +78,11 @@ def separate_spine_into_vertebrae(root_path_spines, spine_id, root_path_vertebra
 
             vertImage = nib.Nifti1Image(vertData_3D, sample.affine, sample.header)
 
-            nib.save(vertImage,os.path.join(savePath, spine_segm_name_wo_ext + "_verLev" + str(level) + ".nii.gz"))
+            nib.save(vertImage,path_segm_vert)
 
-            # Generate 2D labelmaps by taking the middle slice
+            # Generate 2D labelmaps that simulate Xray annotations
             if(generate2DLabelmap):
-                # create somehow 2D label from 3D labelmap, for now select the middle slice
-                # TODO think of better ways to create 2D label that simulates Xray label, maybe accumulation of values?
-                vertData_2D = vertData_3D[:,:,vertData_3D.shape[2]//2]
-                np.save(savePath, spine_segm_name_wo_ext + "_verLev" + str(level), vertData_2D)
-
+                generate_2D_labelmap(vertData_3D, savePath, spine_segm_name_wo_ext, sample,level)
 
     end = timer()
     print("process took: " + str(end-start) +  " seconds")
@@ -104,8 +118,7 @@ if __name__ == '__main__':
     )
     arg_parser.add_argument(
         "--generate2DLabelmap",
-        required=False,
-        default=False,
+        action="store_true",
         dest="generate2DLabelmap",
         help="Flag whether to generate 2d labelmap to be further used as aid to the completion network"
 
