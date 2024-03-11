@@ -48,7 +48,6 @@ def separate_spine_into_vertebrae(root_path_spines, spine_id, root_path_vertebra
     # read the segmentation with nibabel
     sample = nib.load(spine_segm_file)
     numpyData = sample.get_fdata()
-
     # iterate over the labels in json file
     start = timer()
     lumbar_levels = [20,21,22,23,24]
@@ -69,12 +68,11 @@ def separate_spine_into_vertebrae(root_path_spines, spine_id, root_path_vertebra
                     generate_2D_labelmap(vert_segm_np_data,savePath,spine_segm_name_wo_ext,sample,level)
                 continue
 
-            vertData_3D = np.zeros([numpyData.shape[0], numpyData.shape[1], numpyData.shape[2]])
 
-            indices = np.transpose((numpyData == level).nonzero())
 
-            for indic in indices:
-                vertData_3D[indic[0], indic[1], indic[2]] = 1
+            vertData_3D = np.copy(numpyData)
+            vertData_3D[vertData_3D < level] = 0
+            vertData_3D[vertData_3D > level] = 0
 
             vertImage = nib.Nifti1Image(vertData_3D, sample.affine, sample.header)
 
