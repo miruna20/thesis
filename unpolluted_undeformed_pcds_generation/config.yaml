@@ -1,0 +1,7 @@
+root_paths_spines: ../data_subset/spines
+root_paths_vertebrae: ../data_subset/vertebrae
+list_spines:  ../data_subset/list_lumbar_spines.txt
+num_deform: 0
+num_shifts: 1
+nr_points_per_point_cloud: 4096
+pipeline: all

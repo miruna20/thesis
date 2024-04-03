@@ -55,8 +55,6 @@ def generate_2D_labelmap(vert_segm_np_data, savePath, spine_segm_name_wo_ext, sa
     labelmap_2D_in_3D = np.empty_like(vert_segm_np_data)
     labelmap_2D_in_3D[vert_segm_np_data.shape[0]//2,:,:] = vertData_2D
 
-
-
     #vertData_2D = crop_vert(vertData_2D,centroid,patch_size)
 
     path_labelmap_2D = os.path.join(savePath, spine_segm_name_wo_ext + "_verLev" + str(level) + "2D_labelmap.nii.gz")
