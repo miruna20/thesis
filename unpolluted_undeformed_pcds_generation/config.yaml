@@ -1,7 +1,10 @@
-root_paths_spines: ../data_subset/spines
-root_paths_vertebrae: ../data_subset/vertebrae
-list_spines:  ../data_subset/list_lumbar_spines.txt
+root_paths_spines: /home/miruna/Documents/Data/VerSe_Unpreprocessed/testing_cleanup_code/spines
+root_paths_vertebrae: /home/miruna/Documents/Data/VerSe_Unpreprocessed/testing_cleanup_code/vertebrae
+list_spines:  /home/miruna/Documents/Data/VerSe_Unpreprocessed/testing_cleanup_code/spines/lumbar_spines.txt
+dataset_name: dataset_testing_cleanup_code.h5
+scale: 0.01
 num_deform: 0
 num_shifts: 1
 nr_points_per_point_cloud: 4096
-pipeline: all
+blender: /home/miruna/Documents/Code/Tools/blender/blender-2.79-linux-glibc219-x86_64
+pipeline: separate_spine_into_vertebrae convert_to_mesh scale_and_center_mesh shift_and_merge get_camera_poses raycast account_US_shadows separate_spine_pc_into_vert create_h5_dataset

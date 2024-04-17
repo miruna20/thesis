@@ -7,15 +7,11 @@ if __name__ == '__main__':
 
     """
     Prerequisites for this pipeline: 
-    1. The folder structure is the following 
+    The folder structure is the following 
     - root_path_spines directory:
         <root_path_spines>/<spine_id>/ folders are already created 
-    
-    - root_path_vertebrae:
-        <root_path_vertebrae>/<spine_id>/<spine_id>*_msh.obj --> mesh files of individual vertebrae are used for deformation
-        --> to separate spine segmentations into vertebrae segmentations and transform segmentation to mesh check 
-            - "https://github.com/miruna20/thesis/blob/main/separate_spine_into_vertebrae.py"
-            - "https://github.com/miruna20/thesis/blob/main/convert_segmentation_into_mesh.py"
+        - each folder contains a segmentation file of the spine e.g sub-verse835_dir-iso_seg-vert_msk.nii.gz
+        - and a json file with the labelss e.g sub-verse835_dir-iso_seg-subreg_ctd.json (only needed if you want to use the get_spines_lumbar_vertebrae.py which gives a list of all spines that contain the 5 lumbar vertebrae)
               
     Pipeline steps for one spine and it's corresponding vertebrae (can be previously deformed)
     1. Shift initial spine, merge shifted with original 
@@ -71,6 +67,18 @@ if __name__ == '__main__':
         dest="nr_points_per_point_cloud",
         help="Number of points that will be sampled both from the partial point cloud and from the complete mesh"
     )
+    arg_parser.add_argument(
+        "--blender",
+        required=True,
+        dest="blender",
+        help="blender path"
+    )
+    arg_parser.add_argument(
+        "--dataset_name",
+        required=True,
+        dest="dataset_name",
+        help="dataset_name"
+    )
 
     arg_parser.add_argument(
         "--pipeline",
@@ -103,27 +111,35 @@ if __name__ == '__main__':
     list_paths_vertebrae = os.path.join(root_paths_vertebrae, "list_vertebrae.txt")
     path_to_save_camera_poses_csv = os.path.join(root_paths_vertebrae, "camera_poses.csv")
 
-    result_h5_file = os.path.join(root_paths_vertebrae, "dataset.h5")
-    path_blender_executable = "/home/miruna20/Documents/Thesis/Code/Preprocessing/blender-2.79-linux-glibc219-x86_64"
 
-    if 'separate_spine_into_vertebra' in pipeline or 'all' in pipeline:
+    result_h5_file = os.path.join(root_paths_vertebrae, args.dataset_name)
+    workspace_segm_to_mesh = "workspaces/segmentation_to_mesh.iws"
+
+    if 'separate_spine_into_vertebrae' in pipeline or 'all' in pipeline:
         subprocess.call(['python', '01_separate_spine_into_vertebrae.py',
                         '--list_file_names', list_spines,
                         '--root_path_vertebrae', root_paths_vertebrae,
                         '--root_path_spines', root_paths_spines,
-                         '--generate2DLabelmap'
+                         '--generate2DLabelmap'])
 
-        ])
-    if 'scale_down_mesh' in pipeline or 'all' in pipeline:
-        misc.create_list_all_deformed_vert_and_spines_from_spineid(list_spines, list_paths_spines_and_vert_for_scaling,
-                                                                   root_paths_vertebrae, root_paths_spines, num_deform)
-        subprocess.call(['python', '01_scale_down_mesh.py',
-                        '--list_mesh_paths', list_paths_spines_and_vert_for_scaling])
+    if 'convert_to_mesh' in pipeline or 'all' in pipeline:
+        subprocess.call(['python', '02_convert_segmentation_into_mesh.py',
+                         '--root_path_vertebrae',root_paths_vertebrae,
+                         '--root_path_spines',root_paths_spines,
+                         '--list_file_names', list_spines,
+                         '--workspace_file_segm_to_mesh',workspace_segm_to_mesh])
+
+    if 'scale_and_center_mesh' in pipeline or 'all' in pipeline:
+        subprocess.call(['python', '03_scale_and_center_mesh.py',
+                    '--txt_file', list_spines,
+                    '--root_path_vertebrae', root_paths_vertebrae,
+                     '--root_path_spines',root_paths_spines])
+
 
     if 'shift_and_merge' in pipeline or 'all' in pipeline:
         misc.create_list_all_deformed_scaled_spines_from_spineid(list_spines, list_paths_spines, root_paths_spines,
                                                                  num_deform)
-        subprocess.call(['python', '02_shift_and_merge_spine.py',
+        subprocess.call(['python', '04_shift_and_merge_spine.py',
                         '--list_paths_spine', list_paths_spines,
                         '--num_shifts',num_shifts])
 
@@ -132,7 +148,7 @@ if __name__ == '__main__':
                                                                           list_paths_spines_and_vert_for_camera_poses_generation,
                                                                           root_paths_vertebrae, root_paths_spines,
                                                                           num_deform)
-        subprocess.call(['python', '03_generate_camera_poses.py',
+        subprocess.call(['python', '05_generate_camera_poses.py',
                         '--list_spines_and_corresp_vertebrae', list_paths_spines_and_vert_for_camera_poses_generation,
                         '--path_to_save_camera_poses_csv', path_to_save_camera_poses_csv,
                         '--num_deform', num_deform
@@ -145,14 +161,18 @@ if __name__ == '__main__':
                                                                      save_to=list_paths_for_raycasting,
                                                                      num_deform=num_deform,
                                                                      num_shifts=num_shifts)
-        subprocess.call(['python', '04_generate_partial_pointclouds_from_spine.py',
+
+
+        subprocess.call(['python', '06_generate_partial_pointclouds_from_spine.py',
                         '--list_paths_for_raycasting', list_paths_for_raycasting,
                         '--camera_poses', path_to_save_camera_poses_csv,
-                        '--path_blender_executable', path_blender_executable])
+                        '--path_blender_executable', args.blender])
 
-        misc.delete_paths(list_paths_for_raycasting)
+
+
+        #misc.delete_paths(list_paths_for_raycasting)
     if 'account_US_shadows' in pipeline or 'all' in pipeline:
-        subprocess.call(['python', '05_accounts_US_shadows.py',
+        subprocess.call(['python', '07_accounts_US_shadows.py',
                         '--root_paths_spines', root_paths_spines,
                         '--list_spines', list_spines,
                         '--num_deform', num_deform,
@@ -160,7 +180,7 @@ if __name__ == '__main__':
 
     # change this step so that we obtain the pcds per vertebra that only have points that really belong to this vertebra
     if 'separate_spine_pc_into_vert' in pipeline or 'all' in pipeline:
-        subprocess.call(['python', '06_separate_spine_pc_into_vertebrae.py',
+        subprocess.call(['python', '08_separate_spine_pc_into_vertebrae.py',
                         '--list_file_names', list_spines,
                         '--root_path_vertebrae', root_paths_vertebrae,
                         '--root_path_spines', root_paths_spines,
@@ -174,7 +194,7 @@ if __name__ == '__main__':
         # create the list of vertebrae that will be used to create the h5 dataset
 
 
-          subprocess.call(['python', '07_get_list_vertebrae_in_folders.py',
+          subprocess.call(['python', '09_get_list_vertebrae_in_folders.py',
                     '--root_path_vertebrae', root_paths_vertebrae,
                     '--vert_list_to_save', list_paths_vertebrae,
                     '--list_file_names_spines', list_spines,
@@ -184,14 +204,14 @@ if __name__ == '__main__':
 
 
 
-          subprocess.call(['python', '07_create_dataset_for_shape_completion.py',
+          subprocess.call(['python', '09_create_dataset_for_shape_completion.py',
                             '--vertebrae_list', list_paths_vertebrae,
                             '--root_path_vertebrae', root_paths_vertebrae,
                             '--result_h5_file', result_h5_file,
                             '--nr_deform_per_sample', num_deform,
                             '--nr_points_per_point_cloud', nr_points_per_point_cloud,
-                            '--num_shifts', num_shifts,
-                            '--visualize_vertebrae'
+                            '--num_shifts', num_shifts
+                            #'--visualize_vertebrae'
                             ])
 
 

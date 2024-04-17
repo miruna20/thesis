@@ -4,7 +4,7 @@
 	<property name="Datasets">
 		<property name="Data">
 			<param name="uid">data0</param>
-			<param name="name">shifted</param>		
+			<param name="name">shifted</param>
 		</property>
 		<property name="Data">
 			<param name="uid">data1</param>

@@ -30,17 +30,23 @@ if __name__ == '__main__':
     args = munch.munchify(yaml.safe_load(open(config_path)))
 
     # iterates over the file with spines and writes in a temp one each spine one by one
-    save_to_temp = os.path.join(args.root_paths_vertebrae,"list_spines_temp_for_processing.txt")
     # read a list of the spines that we want to process
     with open(args.list_spines) as file:
         spines_ids = file.read().splitlines()
 
+    save_to_temp = os.path.join(args.root_paths_spines,"list_spines_temp_for_processing.txt")
+
+    create_dataset = False
+    if ("create_h5_dataset" in args.pipeline):
+        create_dataset = True
+        args.pipeline = args.pipeline.replace("create_h5_dataset","")
 
     for spine_id in spines_ids:
+        print("Processing: " + str(spine_id))
         list = open(save_to_temp, "w")
         list.write(spine_id + "\n")
-        print("Processing: " + str(spine_id))
         list.close()
+
 
         subprocess.call(['python', '00_unpolluted_pcds_pipeline.py',
                         '--root_paths_spines', args.root_paths_spines,
@@ -49,17 +55,25 @@ if __name__ == '__main__':
                         '--num_deform', str(args.num_deform),
                         '--num_shifts', str(args.num_shifts),
                         '--nr_points_per_point_cloud',str(args.nr_points_per_point_cloud),
-                        #'--pipeline', 'scale_down_mesh shift_and_merge get_camera_poses raycast account_US_shadows separate_spine_pc_into_vert'])
-                        '--pipeline', ''])
+                         '--blender',str(args.blender),
+                         '--dataset_name', str(args.dataset_name),
+                        '--pipeline', args.pipeline])
 
 
 
     # after everything is done for all spines, call the create_h5_dataset once
-    subprocess.run(['python', '00_unpolluted_pcds_pipeline.py',
+
+    if(create_dataset):
+        subprocess.run(['python', '00_unpolluted_pcds_pipeline.py',
                     '--root_paths_spines', args.root_paths_spines,
                     '--root_paths_vertebrae', args.root_paths_vertebrae,
                     '--list_spines', args.list_spines,
                     '--num_deform', str(args.num_deform),
                     '--num_shifts', str(args.num_shifts),
                     '--nr_points_per_point_cloud', str(args.nr_points_per_point_cloud),
+                    '--blender',str(args.blender),
+                    '--dataset_name',str(args.dataset_name),
                     '--pipeline', 'create_h5_dataset'])
+
+
+

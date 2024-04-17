@@ -3,6 +3,8 @@ import os
 import json
 import argparse
 from pathlib import Path
+import munch
+import yaml
 
 def get_spines_with_lumbar_vertebrae(root_folder, file):
 
@@ -16,7 +18,7 @@ def get_spines_with_lumbar_vertebrae(root_folder, file):
     if(not os.path.exists(os.path.dirname(file))):
         os.makedirs(os.path.dirname(file))
 
-    # gather all of the json files to be able to check for lumbar vertebrae
+    # gather all the json files to be able to check for lumbar vertebrae
     filenames = []
     for path in sorted(Path(os.path.join(root_folder)).rglob('*.json')):
         filenames.append(str(path))
@@ -42,32 +44,16 @@ def get_spines_with_lumbar_vertebrae(root_folder, file):
 
 if __name__ == "__main__":
 
-    # example setup
-    """
-    root_folder = "/home/miruna20/Documents/Thesis/Dataset/VerSe2020/full_spines/subjectbased_structure/01_training"
-    file = "../samples/lumbar_spines.txt"
-    
-    """
-    arg_parser = argparse.ArgumentParser(description="Generate txt file with the names of the spines that contain all lumbar vertebrae")
+    arg_parser = argparse.ArgumentParser(
+        description="Generate dataset with complete and partial pointclouds from CT for shape completion")
 
-    arg_parser.add_argument(
-        "--root_path_spines",
-        required=True,
-        dest="root_path_spines",
-        help="Root path to the vertebrae folders."
-    )
+    arg_parser.add_argument('-c', '--config', help='path to config file', required=True)
 
-    arg_parser.add_argument(
-        "--list_file_names",
-        required=True,
-        dest="txt_file",
-        help="File where the names of the lumbar vertebrae will be written"
-    )
+    arg = arg_parser.parse_args()
+    config_path = arg.config
+    args = munch.munchify(yaml.safe_load(open(config_path)))
 
-    args = arg_parser.parse_args()
-    print("Creating a txt list with the spine ids of all spines that contain lumbar vertebrae")
-
-    get_spines_with_lumbar_vertebrae(root_folder=args.root_path_spines, file=args.txt_file)
+    get_spines_with_lumbar_vertebrae(root_folder=args.root_paths_spines, file=args.list_spines)
 
 
 

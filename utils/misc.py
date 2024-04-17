@@ -199,6 +199,24 @@ def create_list_all_vert_and_spines_from_spineid(list_of_spine_ids, save_to, roo
 
     for spine_id in spine_ids:
         # find the paths of all deformed spines
+        paths_spine = namings.get_path_lumbar_spine_initial(root_spines, spine_id)
+        paths_vertebrae = namings.get_paths_vertebrae(root_vert, spine_id)
+        print(paths_spine)
+        print("\n")
+        list.write(paths_spine + "\n")
+        print(paths_vertebrae)
+        print("\n")
+        write_list_row_by_row_to_txt_file(paths_vertebrae,list)
+
+
+def create_list_all_vert_and_spines_centered_from_spineid(list_of_spine_ids, save_to, root_vert, root_spines):
+    with open(list_of_spine_ids) as file:
+        spine_ids = file.read().splitlines()
+
+    list = open(save_to, "w")
+
+    for spine_id in spine_ids:
+        # find the paths of all deformed spines
         paths_deformed_spine = namings.get_path_lumbar_spine_centered(root_spines, spine_id)
         paths_deformed_vertebrae = namings.get_paths_vertebrae_centered(root_vert, spine_id)
 

@@ -46,7 +46,7 @@ def crop_vert(data, centroid, crop_size=(0, 128,128)):
     return cropped_data
 
 
-def generate_2D_labelmap(vert_segm_np_data, savePath, spine_segm_name_wo_ext, sample,level, centroid,patch_size):
+def generate_2D_labelmap(vert_segm_np_data, savePath, spine_id, sample,level):
     print("Generating labelmap")
     vertData_2D = np.sum(vert_segm_np_data,axis=0)
 
@@ -55,9 +55,11 @@ def generate_2D_labelmap(vert_segm_np_data, savePath, spine_segm_name_wo_ext, sa
     labelmap_2D_in_3D = np.empty_like(vert_segm_np_data)
     labelmap_2D_in_3D[vert_segm_np_data.shape[0]//2,:,:] = vertData_2D
 
-    #vertData_2D = crop_vert(vertData_2D,centroid,patch_size)
+    folder = os.path.join(savePath,"labelmap")
+    if (not os.path.exists(Path(folder))):
+        os.mkdir(folder)
 
-    path_labelmap_2D = os.path.join(savePath, spine_segm_name_wo_ext + "_verLev" + str(level) + "2D_labelmap.nii.gz")
+    path_labelmap_2D = os.path.join(folder, spine_id + "_verLev" + str(level) + "2D_labelmap.nii.gz")
     vert_image_2D = nib.Nifti1Image(labelmap_2D_in_3D, sample.affine,sample.header)
     nib.save(vert_image_2D, path_labelmap_2D)
 
@@ -71,7 +73,7 @@ def find_file_in_folder_with_unique_identifier(folder,unique_identifier):
     return files[0]
 
 
-def separate_spine_into_vertebrae(root_path_spines, spine_id, root_path_vertebrae,generate2DLabelmap,patch_size):
+def separate_spine_into_vertebrae(root_path_spines, spine_id, root_path_vertebrae, generate2DLabelmap):
 
     # path of folder of the spine with spine_id
     path_spine = os.path.join(root_path_spines,spine_id)
@@ -80,7 +82,7 @@ def separate_spine_into_vertebrae(root_path_spines, spine_id, root_path_vertebra
     unique_identifier_spine = spine_id + "*_msk.nii.gz"
     spine_segm_file = find_file_in_folder_with_unique_identifier(path_spine,unique_identifier_spine)
     spine_segm_name = os.path.basename(spine_segm_file)
-    spine_segm_name_wo_ext = spine_segm_name[:spine_segm_name.find('.nii.gz')]
+    spine_segm_folder = os.path.dirname(spine_segm_file)
 
     if(spine_segm_file==""):
         print("The segmentation file cannot be found in " + str(path_spine), file=sys.stderr)
@@ -99,7 +101,7 @@ def separate_spine_into_vertebrae(root_path_spines, spine_id, root_path_vertebra
             # if the file already exists, skip
             savePath = os.path.join(root_path_vertebrae, spine_id + "_verLev" + str(level))
 
-            path_segm_vert = os.path.join(savePath, spine_segm_name_wo_ext + "_verLev" + str(level) + ".nii.gz")
+            path_segm_vert = os.path.join(savePath, spine_id + "_verLev" + str(level) + ".nii.gz")
             if (not os.path.exists(Path(savePath))):
                 os.mkdir(savePath)
             elif (os.path.exists(Path(path_segm_vert))):
@@ -111,7 +113,7 @@ def separate_spine_into_vertebrae(root_path_spines, spine_id, root_path_vertebra
                     with open(json_file, "r") as json_file:
                         json_data = json.load(json_file)
                     centroid = get_coordinates_from_json(json_data,level)
-                    generate_2D_labelmap(vert_segm_np_data,savePath,spine_segm_name_wo_ext,sample,level,centroid,patch_size)
+                    generate_2D_labelmap(vert_segm_np_data,savePath,spine_id,sample,level)
                 continue
 
 
@@ -129,11 +131,30 @@ def separate_spine_into_vertebrae(root_path_spines, spine_id, root_path_vertebra
                 with open(json_file, "r") as json_file:
                     json_data = json.load(json_file)
                 centroid = get_coordinates_from_json(json_data, level)
-                generate_2D_labelmap(vertData_3D, savePath, spine_segm_name_wo_ext, sample,level,centroid,patch_size)
+                generate_2D_labelmap(vertData_3D, savePath, spine_id, sample,level)
 
     end = timer()
     print("process took: " + str(end-start) +  " seconds")
     sample.uncache()
+
+def separate_spines_into_vertebrae(txt_file,root_path_spines,root_path_vertebrae,generate2DLabelmap):
+
+    if (not os.path.exists(root_path_vertebrae)):
+        os.mkdir(root_path_vertebrae)
+
+    # iterate over the txt file and process all spines
+    with open(txt_file) as file:
+        spine_ids = [line.strip() for line in file]
+
+    for spine_id in spine_ids:
+        print("Separating spine: " + str(spine_id))
+        try:
+            separate_spine_into_vertebrae(root_path_spines=root_path_spines, spine_id=spine_id,
+                                          root_path_vertebrae=root_path_vertebrae,
+                                          generate2DLabelmap=generate2DLabelmap)
+        except Exception as e:
+            print("Error occured for:  " + str(spine_id) + str(e), file=sys.stderr)
+
 
 if __name__ == '__main__':
 
@@ -174,22 +195,8 @@ if __name__ == '__main__':
     print("Separate spine segmentation into segmentation of individual vertebrae")
 
     args = arg_parser.parse_args()
-    patch_size = (0,256,256)
+    separate_spines_into_vertebrae(args.txt_file,args.root_path_spines,args.root_path_vertebrae,args.generate2DLabelmap)
 
-    # iterate over the txt file and process all spines
-    with open(args.txt_file) as file:
-        spine_ids = [line.strip() for line in file]
-
-    if(not os.path.exists(args.root_path_vertebrae)):
-        os.mkdir(args.root_path_vertebrae)
-
-    for spine_id in spine_ids:
-        print("Separating spine: " + str(spine_id))
-        try:
-            separate_spine_into_vertebrae(root_path_spines=args.root_path_spines, spine_id=spine_id,
-                                           root_path_vertebrae=args.root_path_vertebrae, generate2DLabelmap=args.generate2DLabelmap, patch_size=patch_size)
-        except Exception as e:
-            print("Error occured for:  " + str(spine_id) + str(e), file=sys.stderr)
 
 
 

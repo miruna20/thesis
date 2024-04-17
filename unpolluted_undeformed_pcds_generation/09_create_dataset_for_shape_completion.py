@@ -77,29 +77,17 @@ def processOneVertebra(pathCompleteVertebra, pathToPartialPCD,pathToLabelmap, nr
 
     # load complete vertebra and its partial point cloud
     completeVertebra = o3d.io.read_triangle_mesh(pathCompleteVertebra)
+    labelmap = o3d.io.read_triangle_mesh(pathToLabelmap)
+
     partial_pcd = o3d.io.read_point_cloud(pathToPartialPCD)
     logging.debug("Path to partial pcd " + str(pathToPartialPCD))
 
-    #load labelmap as well and transform to pointcloud
-    labelmap_image = nib.load(pathToLabelmap)
-    labelmap_array = labelmap_image.get_fdata()
-    affine = labelmap_image.affine
-    voxel_coords = np.argwhere(labelmap_array == 1)
-    # apply affine to the indices
-    voxel_coords_homogeneous = np.concatenate([voxel_coords, np.ones((len(voxel_coords), 1))], axis=1)
-    world_coords = np.dot(voxel_coords_homogeneous,affine.T)
-    labelmap_pcd = o3d.geometry.PointCloud()
-    labelmap_pcd.points = o3d.utility.Vector3dVector(world_coords[:, :3])
     #labelmap_pcd.points = o3d.utility.Vector3dVector(voxel_coords)
 
     # first scale everything back up with a scale factor of 100
     completeVertebra.scale(100, center=np.asarray([0, 0, 0]))
+    labelmap.scale(100, center=np.asarray([0, 0, 0]))
     partial_pcd.scale(100, center=np.asarray([0, 0, 0]))
-
-    points_np = np.asarray(labelmap_pcd.points)
-    points_np[:, 1:] *= -1
-    points_np[:, [0, 2]] *= -1
-    labelmap_pcd.points = o3d.utility.Vector3dVector(points_np)
 
     unit_sphere_size = 1
     bb_partial_pcd = partial_pcd.get_axis_aligned_bounding_box()
@@ -107,21 +95,21 @@ def processOneVertebra(pathCompleteVertebra, pathToPartialPCD,pathToLabelmap, nr
     # we know that the length between the two transverse processes will be along the x axis
     length_partial_pcd = bb_partial_pcd.get_max_bound()[0] - bb_partial_pcd.get_min_bound()[0]
 
-    # + 20 here is just a padding to ensure that the full shape of the vertebra
+    # + 40 here is just a padding to ensure that the full shape of the vertebra
     # will fit in the unit sphere (which it won't without padding if the axis from arch to vert body
     # is longer than the one in between transverse process
-    scaling_factor = unit_sphere_size/(length_partial_pcd+30)
+    scaling_factor = unit_sphere_size/(length_partial_pcd+40)
 
     completeVertebra.scale(scaling_factor, center=np.asarray([0, 0, 0]))
 
     #do not add vertebrae with GT larger than unit sphere
     if not complete_vert_fits_into_unit_sphere(completeVertebra):
         logging.debug("DOES NOT FIT INTO UNIT SPHERE")
-        return [],[]
+        return [],[],[]
 
 
     partial_pcd.scale(scaling_factor, center=np.asarray([0, 0, 0]))
-    labelmap_pcd.scale(scaling_factor, center=np.asarray([0,0,0]))
+    labelmap.scale(scaling_factor, center=np.asarray([0,0,0]))
 
     # find vert level
     match = re.search(r'verLev(\d+)', pathToPartialPCD)
@@ -135,12 +123,12 @@ def processOneVertebra(pathCompleteVertebra, pathToPartialPCD,pathToLabelmap, nr
     completeVertebra.translate(transl)
     completeVertebra.transform(ICP_trafo)
 
-    labelmap_pcd.translate(transl)
-    labelmap_pcd.transform(ICP_trafo)
+    labelmap.translate(transl)
+    labelmap.transform(ICP_trafo)
 
     # sample complete vertebra with the poisson disk sampling technique
     pointCloudComplete = o3d.geometry.TriangleMesh.sample_points_poisson_disk(completeVertebra, nrPointsProCompletePC)
-
+    pointCloudLabelmap = o3d.geometry.TriangleMesh.sample_points_poisson_disk(labelmap, nrPointsProCompletePC)
     # sample partial point cloud Farthest Point Sample
 
     # check if partial_pcd has >= nrPointsProPartialPC points
@@ -150,21 +138,10 @@ def processOneVertebra(pathCompleteVertebra, pathToPartialPCD,pathToLabelmap, nr
     logging.debug("Initial number of points in pcd:" + str(nr_points_in_partial_pcd))
     if (nr_points_in_partial_pcd >= nrPointsProPartialPC):
         sampled_partial_pcd = fps.fps_points(np.asarray(partial_pcd.points), num_samples=nrPointsProPartialPC)
-        print("Number of points after sampling: " + str(sampled_partial_pcd.shape[0]))
+        logging.debug("Number of points after sampling: " + str(sampled_partial_pcd.shape[0]))
     else:
-        logging.debug("PCD with less than " + str(nrPointsProPartialPC) + "points" + str(os.path.basename(pathToPartialPCD)))
-        return 0, []
-
-    nr_points_in_label_pcd = np.asarray(labelmap_pcd.points).shape[0]
-    logging.debug("Initial number of points in pcd:" + str(nr_points_in_label_pcd))
-    if (nr_points_in_label_pcd >= nrPointsProPartialPC):
-        sampled_label_pcd = fps.fps_points(np.asarray(labelmap_pcd.points), num_samples=nrPointsProPartialPC)
-        print("Number of points after sampling: " + str(sampled_label_pcd.shape[0]))
-    else:
-        logging.debug(
-            "PCD with less than " + str(nrPointsProPartialPC) + "points" + str(os.path.basename(pathToPartialPCD)))
-        return 0, []
-
+        logging.debug("PCD with less than " + str(nrPointsProPartialPC) + "points " + str(os.path.basename(pathToPartialPCD)))
+        return 0, [], []
 
     if (visualize):
         coord_sys = o3d.geometry.TriangleMesh.create_coordinate_frame()
@@ -178,14 +155,14 @@ def processOneVertebra(pathCompleteVertebra, pathToPartialPCD,pathToLabelmap, nr
 
         partial_pcd.paint_uniform_color([0, 0, 1])
 
-        labelmap_pcd.paint_uniform_color([1, 0, 0])
-        o3d.io.write_point_cloud("labelmap.pcd", labelmap_pcd)
+        pointCloudLabelmap.paint_uniform_color([1, 0, 0])
+        o3d.io.write_point_cloud("labelmap.pcd", pointCloudLabelmap)
 
-        o3d.visualization.draw([partial_pcd, coord_sys, pointCloudComplete,labelmap_pcd])
+        o3d.visualization.draw([partial_pcd, coord_sys, pointCloudComplete,pointCloudLabelmap])
 
     partial_pcds = []
     partial_pcds.append((sampled_partial_pcd))
-    return np.asarray(pointCloudComplete.points), partial_pcds,sampled_label_pcd
+    return np.asarray(pointCloudComplete.points), partial_pcds, np.asarray(pointCloudLabelmap.points)
 
 
 def extractLabel(nameVertebra):
@@ -245,9 +222,10 @@ def processAllVertebrae(list_path, rootDirectoryVertebrae, saveTo,
         vert_folder_name = model_id
         shift_root = os.path.join(rootDirectoryVertebrae, vert_folder_name, "shifts")
         shift_folders = sorted(os.listdir(shift_root))
+
         if (len(shift_folders) != int(nr_shifts_per_sample)):
             raise Exception(
-                "Number of found shift folders does not match the number of given shifts per sample for " + str(
+                "Number of found shift folders: " + str(len(shift_folders)) +  " does not match the number of given shifts per sample for" + str(
                     model_id))
 
         for shift in range(int(nr_shifts_per_sample)):
@@ -263,7 +241,7 @@ def processAllVertebrae(list_path, rootDirectoryVertebrae, saveTo,
                                               namings.get_name_vert_scaled(vert_folder_name))
 
                 #  process each vertebra individually
-                labelmap_path = find_file_in_folder_with_unique_identifier(os.path.join(rootDirectoryVertebrae, vert_folder_name), vert_folder_name + "*2D_labelmap.nii.gz")
+                labelmap_path = find_file_in_folder_with_unique_identifier(os.path.join(rootDirectoryVertebrae, vert_folder_name, "labelmap"), vert_folder_name + "*labelmap*_centered_scaled*.obj")
 
                 complete_pcd, partial_pcds,labelmap = processOneVertebra(pathCompleteVertebra=vert_mesh_path,
                                                                 pathToPartialPCD=unpolluted_pcd_path,
@@ -275,8 +253,6 @@ def processAllVertebrae(list_path, rootDirectoryVertebrae, saveTo,
                 # if the partial point cloud has less than nrPointsProPartialPC then partial_pcds will be an empty list
                 if len(partial_pcds) == 0:
                     continue
-
-
 
                 logging.debug(partial_pcds[0].shape)
                 # add it to h5py

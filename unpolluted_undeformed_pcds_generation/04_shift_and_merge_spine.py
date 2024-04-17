@@ -29,7 +29,7 @@ def transl_to_trafo(x, y):
 def shift_and_merge(trafo, path_lumbar_spine, path_to_save_merged):
     placeholders = ['PathLumbarSpine', 'Trafo', 'PathToSaveMerged']
     arguments_imfusion = ""
-    workspace_file_shift_and_merge = "../imfusion_workspaces/shift_and_merge_placeholders.iws"
+    workspace_file_shift_and_merge = "workspaces/shift_and_merge_placeholders.iws"
     for p in placeholders:
         if p == 'Trafo':
             value = '"' + str(trafo) + '"'
@@ -70,8 +70,18 @@ if __name__ == '__main__':
     with open(args.txt_file) as file:
         paths_spines_list = file.read().splitlines()
 
-    x_shifts = [ 0.05, 0.07, 0.1]
-    y_shifts = [-0.01, -0.05, -0.1]
+    #x_shifts = [ 0.05, 0.07, 0.1]
+    #y_shifts = [-0.01, -0.05, -0.1]
+
+    #x_shifts = [ 0.05,  0.1]
+    #y_shifts = [-0.01,  -0.1]
+
+    #x_shifts = [0.05, 0.07]
+    #y_shifts = [-0.01, -0.05]
+
+    x_shifts = [0.05]
+    y_shifts = [-0.01]
+
     # get all of the combinations of shifts and make sure they match the num_shifts passed
     unique_comb_of_shifts = generate_all_combinations_of_trafo(x_shifts, y_shifts)
     if (len(unique_comb_of_shifts) != int(args.num_shifts)):

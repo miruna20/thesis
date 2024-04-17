@@ -73,7 +73,7 @@ if __name__ == '__main__':
 
     # process the exr files, generate depth images as well as the pcds
     print("Generating point clouds...")
-    subprocess.run(['python',  # call python
+    subprocess.run(['python3',  # call python
                     '../raycasting_scripts/process_exr.py',  # with script that generates point clouds
                     args.list_paths_for_raycasting,
                     str(num_scans_per_model)  # number of scans per model
