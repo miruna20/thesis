@@ -126,9 +126,17 @@ def processOneVertebra(pathCompleteVertebra, pathToPartialPCD,pathToLabelmap, nr
     labelmap.translate(transl)
     labelmap.transform(ICP_trafo)
 
+    # first sample a large amount of points
+    pointCloudLabelmap = o3d.geometry.TriangleMesh.sample_points_poisson_disk(labelmap, 20000)
+
+    # only select the points that belong to the vertebral body (heuristically by taking all points below the center of mass)
+    center_labelmap = pointCloudLabelmap.get_center()
+    points = np.asarray(pointCloudLabelmap.points).tolist()
+    points_below_center_of_mass = [point for point in points if (point[1] < center_labelmap[1])]
+    pointCloudLabelmap.points = o3d.utility.Vector3dVector(np.asarray(points_below_center_of_mass))
+
     # sample complete vertebra with the poisson disk sampling technique
     pointCloudComplete = o3d.geometry.TriangleMesh.sample_points_poisson_disk(completeVertebra, nrPointsProCompletePC)
-    pointCloudLabelmap = o3d.geometry.TriangleMesh.sample_points_poisson_disk(labelmap, nrPointsProCompletePC)
     # sample partial point cloud Farthest Point Sample
 
     # check if partial_pcd has >= nrPointsProPartialPC points
@@ -142,6 +150,8 @@ def processOneVertebra(pathCompleteVertebra, pathToPartialPCD,pathToLabelmap, nr
     else:
         logging.debug("PCD with less than " + str(nrPointsProPartialPC) + "points " + str(os.path.basename(pathToPartialPCD)))
         return 0, [], []
+
+    sampled_labelmap_pcd = fps.fps_points(np.asarray(pointCloudLabelmap.points), num_samples=nrPointsProPartialPC)
 
     if (visualize):
         coord_sys = o3d.geometry.TriangleMesh.create_coordinate_frame()
@@ -162,7 +172,7 @@ def processOneVertebra(pathCompleteVertebra, pathToPartialPCD,pathToLabelmap, nr
 
     partial_pcds = []
     partial_pcds.append((sampled_partial_pcd))
-    return np.asarray(pointCloudComplete.points), partial_pcds, np.asarray(pointCloudLabelmap.points)
+    return np.asarray(pointCloudComplete.points), partial_pcds, sampled_labelmap_pcd
 
 
 def extractLabel(nameVertebra):

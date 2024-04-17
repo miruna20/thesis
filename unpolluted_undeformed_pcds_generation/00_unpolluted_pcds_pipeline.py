@@ -81,6 +81,12 @@ if __name__ == '__main__':
     )
 
     arg_parser.add_argument(
+        "--visualize",
+        required=False,
+        dest="visualize",
+        help="truth value indicates whether to visualize or not the vertebrae during the shape completion process"
+    )
+    arg_parser.add_argument(
         "--pipeline",
         nargs='+',
         default=['all'],
@@ -92,7 +98,7 @@ if __name__ == '__main__':
     pipeline = args.pipeline
 
     # cover the case in which we call this pipeline from another script
-    #TODO does this always work?
+    # TODO does this always work?
     pipeline.extend(pipeline[0].split())
     root_paths_spines = args.root_paths_spines
     root_paths_vertebrae = args.root_paths_vertebrae
@@ -111,37 +117,35 @@ if __name__ == '__main__':
     list_paths_vertebrae = os.path.join(root_paths_vertebrae, "list_vertebrae.txt")
     path_to_save_camera_poses_csv = os.path.join(root_paths_vertebrae, "camera_poses.csv")
 
-
     result_h5_file = os.path.join(root_paths_vertebrae, args.dataset_name)
     workspace_segm_to_mesh = "workspaces/segmentation_to_mesh.iws"
 
     if 'separate_spine_into_vertebrae' in pipeline or 'all' in pipeline:
         subprocess.call(['python', '01_separate_spine_into_vertebrae.py',
-                        '--list_file_names', list_spines,
-                        '--root_path_vertebrae', root_paths_vertebrae,
-                        '--root_path_spines', root_paths_spines,
+                         '--list_file_names', list_spines,
+                         '--root_path_vertebrae', root_paths_vertebrae,
+                         '--root_path_spines', root_paths_spines,
                          '--generate2DLabelmap'])
 
     if 'convert_to_mesh' in pipeline or 'all' in pipeline:
         subprocess.call(['python', '02_convert_segmentation_into_mesh.py',
-                         '--root_path_vertebrae',root_paths_vertebrae,
-                         '--root_path_spines',root_paths_spines,
+                         '--root_path_vertebrae', root_paths_vertebrae,
+                         '--root_path_spines', root_paths_spines,
                          '--list_file_names', list_spines,
-                         '--workspace_file_segm_to_mesh',workspace_segm_to_mesh])
+                         '--workspace_file_segm_to_mesh', workspace_segm_to_mesh])
 
     if 'scale_and_center_mesh' in pipeline or 'all' in pipeline:
         subprocess.call(['python', '03_scale_and_center_mesh.py',
-                    '--txt_file', list_spines,
-                    '--root_path_vertebrae', root_paths_vertebrae,
-                     '--root_path_spines',root_paths_spines])
-
+                         '--txt_file', list_spines,
+                         '--root_path_vertebrae', root_paths_vertebrae,
+                         '--root_path_spines', root_paths_spines])
 
     if 'shift_and_merge' in pipeline or 'all' in pipeline:
         misc.create_list_all_deformed_scaled_spines_from_spineid(list_spines, list_paths_spines, root_paths_spines,
                                                                  num_deform)
         subprocess.call(['python', '04_shift_and_merge_spine.py',
-                        '--list_paths_spine', list_paths_spines,
-                        '--num_shifts',num_shifts])
+                         '--list_paths_spine', list_paths_spines,
+                         '--num_shifts', num_shifts])
 
     if 'get_camera_poses' in pipeline or 'all' in pipeline:
         misc.create_list_all_deformed_scaled_vert_and_spines_from_spineid(list_spines,
@@ -149,10 +153,10 @@ if __name__ == '__main__':
                                                                           root_paths_vertebrae, root_paths_spines,
                                                                           num_deform)
         subprocess.call(['python', '05_generate_camera_poses.py',
-                        '--list_spines_and_corresp_vertebrae', list_paths_spines_and_vert_for_camera_poses_generation,
-                        '--path_to_save_camera_poses_csv', path_to_save_camera_poses_csv,
-                        '--num_deform', num_deform
-                        ])
+                         '--list_spines_and_corresp_vertebrae', list_paths_spines_and_vert_for_camera_poses_generation,
+                         '--path_to_save_camera_poses_csv', path_to_save_camera_poses_csv,
+                         '--num_deform', num_deform
+                         ])
 
     if 'raycast' in pipeline or 'all' in pipeline:
         # we create a txt file with all of the paths for further raycasting
@@ -162,56 +166,57 @@ if __name__ == '__main__':
                                                                      num_deform=num_deform,
                                                                      num_shifts=num_shifts)
 
-
         subprocess.call(['python', '06_generate_partial_pointclouds_from_spine.py',
-                        '--list_paths_for_raycasting', list_paths_for_raycasting,
-                        '--camera_poses', path_to_save_camera_poses_csv,
-                        '--path_blender_executable', args.blender])
+                         '--list_paths_for_raycasting', list_paths_for_raycasting,
+                         '--camera_poses', path_to_save_camera_poses_csv,
+                         '--path_blender_executable', args.blender])
 
-
-
-        #misc.delete_paths(list_paths_for_raycasting)
+        # misc.delete_paths(list_paths_for_raycasting)
     if 'account_US_shadows' in pipeline or 'all' in pipeline:
         subprocess.call(['python', '07_accounts_US_shadows.py',
-                        '--root_paths_spines', root_paths_spines,
-                        '--list_spines', list_spines,
-                        '--num_deform', num_deform,
-                        ])
+                         '--root_paths_spines', root_paths_spines,
+                         '--list_spines', list_spines,
+                         '--num_deform', num_deform,
+                         ])
 
     # change this step so that we obtain the pcds per vertebra that only have points that really belong to this vertebra
     if 'separate_spine_pc_into_vert' in pipeline or 'all' in pipeline:
         subprocess.call(['python', '08_separate_spine_pc_into_vertebrae.py',
-                        '--list_file_names', list_spines,
-                        '--root_path_vertebrae', root_paths_vertebrae,
-                        '--root_path_spines', root_paths_spines,
-                        '--nr_deform_per_spine', num_deform,
-                        '--nr_shift_per_spine',num_shifts
-                        #'--visualize'
-                        ])
-
+                         '--list_file_names', list_spines,
+                         '--root_path_vertebrae', root_paths_vertebrae,
+                         '--root_path_spines', root_paths_spines,
+                         '--nr_deform_per_spine', num_deform,
+                         '--nr_shift_per_spine', num_shifts
+                         # '--visualize'
+                         ])
 
     if 'create_h5_dataset' in pipeline or 'all' in pipeline:
         # create the list of vertebrae that will be used to create the h5 dataset
 
+        subprocess.call(['python', '09_get_list_vertebrae_in_folders.py',
+                         '--root_path_vertebrae', root_paths_vertebrae,
+                         '--vert_list_to_save', list_paths_vertebrae,
+                         '--list_file_names_spines', list_spines,
+                         '--nr_deform_per_spine', num_deform,
+                         '--num_shifts', num_shifts
+                         ])
 
-          subprocess.call(['python', '09_get_list_vertebrae_in_folders.py',
-                    '--root_path_vertebrae', root_paths_vertebrae,
-                    '--vert_list_to_save', list_paths_vertebrae,
-                    '--list_file_names_spines', list_spines,
-                    '--nr_deform_per_spine', num_deform,
-                    '--num_shifts',num_shifts
-                    ])
-
-
-
-          subprocess.call(['python', '09_create_dataset_for_shape_completion.py',
-                            '--vertebrae_list', list_paths_vertebrae,
-                            '--root_path_vertebrae', root_paths_vertebrae,
-                            '--result_h5_file', result_h5_file,
-                            '--nr_deform_per_sample', num_deform,
-                            '--nr_points_per_point_cloud', nr_points_per_point_cloud,
-                            '--num_shifts', num_shifts
-                            #'--visualize_vertebrae'
-                            ])
-
-
+        if (args.visualize.lower() == 'true'):
+            subprocess.call(['python', '09_create_dataset_for_shape_completion.py',
+                             '--vertebrae_list', list_paths_vertebrae,
+                             '--root_path_vertebrae', root_paths_vertebrae,
+                             '--result_h5_file', result_h5_file,
+                             '--nr_deform_per_sample', num_deform,
+                             '--nr_points_per_point_cloud', nr_points_per_point_cloud,
+                             '--num_shifts', num_shifts,
+                             '--visualize_vertebrae'
+                             ])
+        else:
+            subprocess.call(['python', '09_create_dataset_for_shape_completion.py',
+                             '--vertebrae_list', list_paths_vertebrae,
+                             '--root_path_vertebrae', root_paths_vertebrae,
+                             '--result_h5_file', result_h5_file,
+                             '--nr_deform_per_sample', num_deform,
+                             '--nr_points_per_point_cloud', nr_points_per_point_cloud,
+                             '--num_shifts', num_shifts
+                             ])

@@ -73,7 +73,8 @@ if __name__ == '__main__':
                     '--nr_points_per_point_cloud', str(args.nr_points_per_point_cloud),
                     '--blender',str(args.blender),
                     '--dataset_name',str(args.dataset_name),
-                    '--pipeline', 'create_h5_dataset'])
+                    '--pipeline', 'create_h5_dataset',
+                    '--visualize', str(args.visualize)])
 
 
 

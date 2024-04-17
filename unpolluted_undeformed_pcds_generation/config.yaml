@@ -7,4 +7,7 @@ num_deform: 0
 num_shifts: 1
 nr_points_per_point_cloud: 4096
 blender: /home/miruna/Documents/Code/Tools/blender/blender-2.79-linux-glibc219-x86_64
-pipeline: separate_spine_into_vertebrae convert_to_mesh scale_and_center_mesh shift_and_merge get_camera_poses raycast account_US_shadows separate_spine_pc_into_vert create_h5_dataset
+pipeline: create_h5_dataset
+
+# visualize the incomplete, complete and labelmap during the dataset creation step (last step of the pipeline)
+visualize: false
