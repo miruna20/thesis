@@ -15,6 +15,48 @@ import glob
 import sys
 import nibabel as nib
 
+def get_vert_body(mesh, complete, vis):
+
+    # Get the oriented bounding box (OBB) of the mesh
+    obb = mesh.get_oriented_bounding_box()
+    obb_corners = np.asarray(obb.get_box_points())
+
+    # Find the four corners with the maximum y-values
+    plane_corners = obb_corners[np.argsort(obb_corners[:, 1])[-4:]]
+
+    # Calculate the normal vector of the plane
+    v1, v2 = plane_corners[1] - plane_corners[0], plane_corners[2] - plane_corners[0]
+    normal_vector = np.cross(v1, v2) / np.linalg.norm(np.cross(v1, v2))
+    reference_vector = np.array([0, 1, 0])
+
+    # Ensure normal vector is within 180 degrees of the reference vector
+    if np.dot(normal_vector, reference_vector) < 0:
+        normal_vector *= -1
+
+    # Calculate the centroid of the mesh
+    mesh_centroid = np.asarray(mesh.get_center())
+
+    # Calculate the equation of the plane
+    D = -np.dot(normal_vector, mesh_centroid)
+    plane_equation = np.concatenate((normal_vector, [D]))
+
+    # Project plane corners onto the plane
+    new_plane_corners = [corner - np.dot(corner - mesh_centroid, normal_vector) * normal_vector for corner in
+                         plane_corners]
+
+    # Find all points in the mesh below the plane
+    below_points = [point for point in np.asarray(mesh.vertices) if np.dot(point, normal_vector) + D < 0]
+
+    # Visualize
+    if(vis):
+        coord_sys = o3d.geometry.TriangleMesh.create_coordinate_frame()
+        o3d.visualization.draw_geometries([mesh, o3d.geometry.PointCloud(o3d.utility.Vector3dVector(plane_corners)),
+                                           o3d.geometry.PointCloud(o3d.utility.Vector3dVector(new_plane_corners)),
+                                           o3d.geometry.PointCloud(o3d.utility.Vector3dVector(below_points)),
+                                           coord_sys])
+
+    return o3d.geometry.PointCloud(o3d.utility.Vector3dVector(below_points))
+
 
 def find_file_in_folder_with_unique_identifier(folder,unique_identifier):
     files = glob.glob(os.path.join(folder,unique_identifier))
@@ -126,14 +168,8 @@ def processOneVertebra(pathCompleteVertebra, pathToPartialPCD,pathToLabelmap, nr
     labelmap.translate(transl)
     labelmap.transform(ICP_trafo)
 
-    # first sample a large amount of points
-    pointCloudLabelmap = o3d.geometry.TriangleMesh.sample_points_poisson_disk(labelmap, 20000)
-
-    # only select the points that belong to the vertebral body (heuristically by taking all points below the center of mass)
-    center_labelmap = pointCloudLabelmap.get_center()
-    points = np.asarray(pointCloudLabelmap.points).tolist()
-    points_below_center_of_mass = [point for point in points if (point[1] < center_labelmap[1])]
-    pointCloudLabelmap.points = o3d.utility.Vector3dVector(np.asarray(points_below_center_of_mass))
+    # test the object aligned selection of the vertebral bodies
+    pointCloudLabelmap = get_vert_body(labelmap,completeVertebra,vis=False)
 
     # sample complete vertebra with the poisson disk sampling technique
     pointCloudComplete = o3d.geometry.TriangleMesh.sample_points_poisson_disk(completeVertebra, nrPointsProCompletePC)
