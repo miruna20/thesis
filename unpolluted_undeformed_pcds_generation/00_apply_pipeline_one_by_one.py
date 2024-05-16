@@ -40,6 +40,9 @@ if __name__ == '__main__':
     if ("create_h5_dataset" in args.pipeline):
         create_dataset = True
         args.pipeline = args.pipeline.replace("create_h5_dataset","")
+    if("all" in args.pipeline):
+        create_dataset = True
+        args.pipeline = "separate_spine_into_vertebrae convert_to_mesh scale_and_center_mesh shift_and_merge get_camera_poses raycast account_US_shadows separate_spine_pc_into_vert"
 
     for spine_id in spines_ids:
         print("Processing: " + str(spine_id))

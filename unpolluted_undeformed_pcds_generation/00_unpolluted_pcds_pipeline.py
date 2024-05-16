@@ -201,7 +201,7 @@ if __name__ == '__main__':
                          '--num_shifts', num_shifts
                          ])
 
-        if (args.visualize.lower() == 'true'):
+        if (args.visualize.lower() == "true"):
             subprocess.call(['python', '09_create_dataset_for_shape_completion.py',
                              '--vertebrae_list', list_paths_vertebrae,
                              '--root_path_vertebrae', root_paths_vertebrae,

@@ -76,11 +76,11 @@ if __name__ == '__main__':
     #x_shifts = [ 0.05,  0.1]
     #y_shifts = [-0.01,  -0.1]
 
-    #x_shifts = [0.05, 0.07]
-    #y_shifts = [-0.01, -0.05]
+    x_shifts = [0.05, 0.07]
+    y_shifts = [-0.01, -0.05]
 
-    x_shifts = [0.05]
-    y_shifts = [-0.01]
+    #x_shifts = [0.05]
+    #y_shifts = [-0.01]
 
     # get all of the combinations of shifts and make sure they match the num_shifts passed
     unique_comb_of_shifts = generate_all_combinations_of_trafo(x_shifts, y_shifts)
