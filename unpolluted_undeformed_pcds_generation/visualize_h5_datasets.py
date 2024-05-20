@@ -59,7 +59,7 @@ if __name__ == "__main__":
     print("Shape of complete pcds: " + str(complete_pcds.shape))
     print("Shape of incomplete pcds: " + str(incomplete_pcds.shape))
 
-    if("num_classes" in inputs_inference):
+    if("number_per_class" in inputs_inference):
         number_samples_per_class = np.array(inputs_inference['number_per_class'])
         print("Number of samples per class: " + str(number_samples_per_class))
     datasets_ids = np.array(inputs_inference['datasets_ids'])
@@ -110,7 +110,7 @@ if __name__ == "__main__":
         print("Average f1: " + str(np.average(f1)))
         print("Average f1_arch: " + str(np.average(f1_arch)))
 
-    step = 15
+    step = 4
     for i in range(0, incomplete_pcds.shape[0], step):
         pc_partial = o3d.geometry.PointCloud()
         pc_partial.points = o3d.utility.Vector3dVector(incomplete_pcds[i])
@@ -185,7 +185,10 @@ if __name__ == "__main__":
             #o3d.visualization.draw_geometries([pc_partial])
             #o3d.visualization.draw_geometries([pc_result,pc_gt])
             coord_sys = o3d.geometry.TriangleMesh.create_coordinate_frame()
-            o3d.visualization.draw_geometries([pc_partial,pc_gt,pc_result,pc_labelmap])
+            if ('labelmaps' in inputs_inference):
+                o3d.visualization.draw_geometries([pc_partial,pc_gt,pc_result,pc_labelmap])
+            else:
+                o3d.visualization.draw_geometries([pc_partial, pc_result])
             #o3d.visualization.draw_geometries([pc_result])
             #o3d.visualization.draw_geometries([pc_gt,pc_result])
 
