@@ -53,16 +53,22 @@ if __name__ == "__main__":
     inputs_inference = h5py.File(args.path_input_dataset, 'r')
     complete_pcds = np.array(inputs_inference['complete_pcds'][()])
     incomplete_pcds = np.array(inputs_inference['incomplete_pcds'][()])
-    labels = np.array(inputs_inference['labels'][()])
-    number_samples_per_class = np.array(inputs_inference['number_per_class'])
+    if("labels" in inputs_inference):
+        labels = np.array(inputs_inference['labels'][()])
+
+    print("Shape of complete pcds: " + str(complete_pcds.shape))
+    print("Shape of incomplete pcds: " + str(incomplete_pcds.shape))
+
+    if("num_classes" in inputs_inference):
+        number_samples_per_class = np.array(inputs_inference['number_per_class'])
+        print("Number of samples per class: " + str(number_samples_per_class))
     datasets_ids = np.array(inputs_inference['datasets_ids'])
 
     if('labelmaps' in inputs_inference ):
         labelmaps = np.array(inputs_inference['labelmaps'])
 
-    print("Shape of complete pcds: " + str(complete_pcds.shape))
-    print("Shape of incomplete pcds: " + str(incomplete_pcds.shape))
-    print("Number of samples per class: " + str(number_samples_per_class))
+
+
 
     # if results are available also read the results dataset
     emd_flag = False
@@ -104,7 +110,7 @@ if __name__ == "__main__":
         print("Average f1: " + str(np.average(f1)))
         print("Average f1_arch: " + str(np.average(f1_arch)))
 
-    step = 1
+    step = 15
     for i in range(0, incomplete_pcds.shape[0], step):
         pc_partial = o3d.geometry.PointCloud()
         pc_partial.points = o3d.utility.Vector3dVector(incomplete_pcds[i])
@@ -112,6 +118,7 @@ if __name__ == "__main__":
         if('labelmaps' in inputs_inference):
             pc_labelmap = o3d.geometry.PointCloud()
             pc_labelmap.points = o3d.utility.Vector3dVector(labelmaps[i])
+            pc_labelmap.paint_uniform_color([0, 0, 0])
 
         pc_gt = o3d.geometry.PointCloud()
         pc_gt.points = o3d.utility.Vector3dVector(complete_pcds[math.floor(i / int(args.nr_partial_pcds_per_sample))])
@@ -136,7 +143,6 @@ if __name__ == "__main__":
         pc_partial.paint_uniform_color([1, 0, 0])
         pc_gt.paint_uniform_color([0, 1, 0])
         coord_sys = o3d.geometry.TriangleMesh.create_coordinate_frame()
-        pc_labelmap.paint_uniform_color([0,0,0])
         if (args.path_result_dataset != None):
             pc_result.paint_uniform_color([0, 0, 1])
 
@@ -187,4 +193,9 @@ if __name__ == "__main__":
         else:
             print("Visualizing: " + str(datasets_ids[i]) + " red: partial pcd, blue: complete pcd")
             #print(str(datasets_ids[i]))
-            o3d.visualization.draw_geometries([pc_partial, pc_gt, pc_labelmap])
+
+            if ('labelmaps' in inputs_inference):
+                o3d.visualization.draw_geometries([pc_partial, pc_gt, pc_labelmap])
+
+            else:
+                o3d.visualization.draw_geometries([pc_partial, pc_gt])
