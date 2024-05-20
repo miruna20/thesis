@@ -59,7 +59,17 @@ def generate_2D_labelmap(image, savePath, spine_id, level):
     # create a binary map
     vertData_2D[vertData_2D > 0] = 1
     labelmap_2D_in_3D = np.empty_like(vert_segm_np_data)
-    labelmap_2D_in_3D[vert_segm_np_data.shape[0] // 2, :, :] = vertData_2D
+
+    # find middle slice from all slices occupied by vert
+    slice_sums = vert_segm_np_data.sum(axis=(1, 2))
+
+    # Get indices of non-empty slices
+    non_empty_slices = np.where(slice_sums > 0)[0]
+
+    # Determine the middle index of the non-empty slices
+    middle_index = non_empty_slices[0] + (non_empty_slices[-1] - non_empty_slices[0]) // 2
+
+    labelmap_2D_in_3D[middle_index, :, :] = vertData_2D
 
     folder = os.path.join(savePath, "labelmap")
     if (not os.path.exists(Path(folder))):
