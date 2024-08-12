@@ -3,6 +3,7 @@ import h5py
 import open3d as o3d
 import math
 import argparse
+import pandas as pd
 
 # Notes:
 #  - noted some irregularities in the test set for indices [800,1360,3040,3472,3600,4000]
@@ -67,9 +68,6 @@ if __name__ == "__main__":
     if('labelmaps' in inputs_inference ):
         labelmaps = np.array(inputs_inference['labelmaps'])
 
-
-
-
     # if results are available also read the results dataset
     emd_flag = False
     if (args.path_result_dataset != None):
@@ -90,28 +88,57 @@ if __name__ == "__main__":
         try:
             emd = np.array(results['emd'][()])
             emd_arch = np.array(results['emd_arch'][()])
+            emd_body = np.array(results['emd_body'][()])
             emd_flag = True
         except:
             print("No emd available for this dataset")
         cd_t = np.array(results['cd_t'][()])
         cd_t_arch = np.array(results['cd_t_arch'][()])
+        cd_t_body = np.array(results['cd_t_body'][()])
         cd_p = np.array(results['cd_p'][()])
         cd_p_arch = np.array(results['cd_p_arch'][()])
+        cd_p_body = np.array(results['cd_p_body'][()])
         f1 = np.array(results['f1'][()])
         f1_arch = np.array(results['f1_arch'][()])
+        f1_body = np.array(results['f1_body'][()])
 
         if (emd_flag):
             print("Average emd: " + str(np.average(emd) * factor))
             print("Average emd for the arch : " + str(np.average(emd_arch) * factor))
+            print("Average emd for the body : " + str(np.average(emd_body) * factor))
         print("Average cd_t: " + str(np.average(cd_t) * factor))
         print("Average cd_t_arch: " + str(np.average(cd_t_arch) * factor))
+        print("Average cd_t_body: " + str(np.average(cd_t_body) * factor))
         print("Average cd_p: " + str(np.average(cd_p) * factor))
         print("Average cd_p_arch: " + str(np.average(cd_p_arch) * factor))
+        print("Average cd_p_body: " + str(np.average(cd_p_body) * factor))
         print("Average f1: " + str(np.average(f1)))
         print("Average f1_arch: " + str(np.average(f1_arch)))
+        print("Average f1_body: " + str(np.average(f1_body)))
+
+        # compute outliers:
+        series = pd.Series(cd_t)
+        print(len(series))
+        # Calculate Q1, Q3, and IQR
+        Q1 = series.quantile(0.25)
+        Q3 = series.quantile(0.75)
+        last_5percent = series.quantile(0.98)
+        IQR = Q3 - Q1
+
+        # Calculate the outlier bounds
+        lower_bound = Q1 - 1.5 * IQR
+        upper_bound = Q3 + 1.5 * IQR
+
+        # Identify outliers and their indices
+        outlier_indices_low = series[(series < lower_bound)].index
+        outlier_indices_high =  series[(series > upper_bound)].index
+        first_quartile = series[(series > Q1) & (series <Q3)].index
+        large_outliers = series[(series > last_5percent)].index
+        print(len(outlier_indices_high))
 
     step = 4
     for i in range(0, incomplete_pcds.shape[0], step):
+    #for i in large_outliers:
         pc_partial = o3d.geometry.PointCloud()
         pc_partial.points = o3d.utility.Vector3dVector(incomplete_pcds[i])
 
@@ -186,7 +213,10 @@ if __name__ == "__main__":
             #o3d.visualization.draw_geometries([pc_result,pc_gt])
             coord_sys = o3d.geometry.TriangleMesh.create_coordinate_frame()
             if ('labelmaps' in inputs_inference):
-                o3d.visualization.draw_geometries([pc_partial,pc_gt,pc_result,pc_labelmap])
+                o3d.visualization.draw_geometries([pc_partial,pc_gt,pc_result,pc_labelmap,coord_sys])
+                #o3d.visualization.draw_geometries([pc_gt,pc_labelmap,coord_sys])
+                o3d.visualization.draw_geometries([pc_result])
+                #o3d.visualization.draw_geometries([pc_partial])
             else:
                 o3d.visualization.draw_geometries([pc_partial, pc_result])
             #o3d.visualization.draw_geometries([pc_result])
